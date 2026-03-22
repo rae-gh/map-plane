@@ -18,7 +18,7 @@ To use a custom location:
 ## Reproducing the Paper Figures
 
 ### Figure 1 — Fourier truncation rings in 1EGJ (0.54 Å)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yourusername/yourrepo/blob/main/notebooks/figure2_1egj_rings.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rae-gh/map-plane/blob/main/notebooks/Figure01_1ejg.ipynb)
 
 Input data: fetched automatically from EBI Electron Density Server  
 PDB accession: 1EGJ  
