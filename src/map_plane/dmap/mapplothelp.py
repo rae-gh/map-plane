@@ -213,12 +213,13 @@ class MapPlotHelp(object):
         fig.update_xaxes(scaleanchor="y",scaleratio=1)
 
         #print(values)
+        PUBLICATION_CONFIG['toImageButtonOptions']['filename'] = title.replace(" ","_")
         if self.filename == "SHOW":
-            fig.show(config=DEFAULT_CONFIG)
+            fig.show(config=PUBLICATION_CONFIG)
         elif self.filename == "FIG":
             return fig
         elif ".html" in self.filename:
-            fig.write_html(self.filename)
+            fig.write_html(self.filename,config=PUBLICATION_CONFIG)
         else:
             fig.write_image(self.filename,width=2079, height=2079)
 
