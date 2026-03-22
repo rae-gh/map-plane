@@ -3,10 +3,6 @@
 
 """
 from abc import ABC, abstractmethod
-from map_plane.vxyz import vectorthree as v3
-from map_plane.vxyz import matrix3d as d3
-import math
-import numpy as np
 
 ### Factory method for creation ##############################################################
 def create_scoring(method, interpA, interpB,log_level=0):

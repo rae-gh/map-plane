@@ -8,7 +8,6 @@ from map_plane.vxyz import crstransform as crs
 from map_plane.vxyz import gridmaker as grid
 from map_plane.ipol import interpolator as pol
 from operator import itemgetter
-import datetime
 import math
 
 #####################################################################

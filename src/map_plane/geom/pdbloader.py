@@ -3,7 +3,6 @@ from os.path import exists
 import urllib.request
 
 from Bio.PDB.MMCIFParser import MMCIFParser
-from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 from Bio.PDB.PDBParser import PDBParser
 import warnings
 from Bio import BiopythonWarning

@@ -6,7 +6,6 @@
 from map_plane.vxyz import spacetransform as space
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import matplotlib
 
 
 #####################################################################
@@ -131,12 +130,13 @@ class MapPlotHelp(object):
                            min_percent=1,
                            max_percent=1,
                            hue="GBR",
-                           levels=20,title="Map-Plane Plot 2d",
+                           levels=20,
+                           title="Map-Plane Plot 2d",
                            samples=-1,width=-1,
                            transparency="no"):
         #https://plotly.com/python/3d-isosurface-plots/
         vals = vals2d.tolist()
-        fig = make_subplots(rows=1, cols=1,subplot_titles=[title],horizontal_spacing=0.05,vertical_spacing=0.05)
+        fig = make_subplots(rows=1, cols=1,horizontal_spacing=0.05,vertical_spacing=0.05)
 
         mind,maxd = 1000,-1000
         for i in range(len(vals)):
@@ -188,9 +188,17 @@ class MapPlotHelp(object):
         fig.update_xaxes(scaleanchor="y",scaleratio=1)
 
         fig.update_layout(
+            margin=dict(l=1, r=1, t=100, b=10),  # t=30 gives title room
+            title=dict(
+                xanchor='center',
+                text=title,
+                x=0.5,
+                y=0.98,
+                yanchor='top',
+                font=dict(size=60, color='black')
+            ),
             # Remove margins and background
-            margin=dict(l=0, r=0, t=0, b=0),
-            paper_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='white',
             plot_bgcolor='white',
             # Remove colour bar
             coloraxis_showscale=False,
@@ -198,6 +206,7 @@ class MapPlotHelp(object):
             width=samples,
             height=samples,
         )
+
 
         #print(values)
         PUBLICATION_CONFIG['toImageButtonOptions']['filename'] = title.replace(" ","_")

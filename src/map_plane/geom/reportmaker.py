@@ -6,7 +6,6 @@ This class manipulates given dataframes into preformatted html reports using mat
 The class assists in high volume output for visual analysis
 """
 import base64
-import gc
 import io
 
 import matplotlib.pyplot as plt

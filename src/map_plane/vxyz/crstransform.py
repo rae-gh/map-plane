@@ -54,7 +54,7 @@ class CrsTransform(object):
                     startVal = self.crs_starts[1] + CRS.B
                 else:
                     startVal = self.crs_starts[2] + CRS.C
-                vCRS.put_by_idx(i, startVal);
+                vCRS.put_by_idx(i, startVal)
             vCRS.put_by_idx(0, vCRS.get_by_idx(0) / self.axis_sampling[0])
             vCRS.put_by_idx(1, vCRS.get_by_idx(1) / self.axis_sampling[1])
             vCRS.put_by_idx(2, vCRS.get_by_idx(2) / self.axis_sampling[2])
@@ -72,12 +72,12 @@ class CrsTransform(object):
         else: #they are not orthogonal
             vFraction = self.deOrthoMat.multiply(XYZ, False)
             for i in range(3):
-                val = vFraction.get_by_idx(i) * self.axis_sampling[i] - self.crs_starts[self.map2xyz[i]];
-                vCRS.put_by_idx(i, val);
-        c = vCRS.get_by_idx(self.map2crs[0]);
-        r = vCRS.get_by_idx(self.map2crs[1]);
-        s = vCRS.get_by_idx(self.map2crs[2]);
-        return v3.VectorThree(c,r,s);
+                val = vFraction.get_by_idx(i) * self.axis_sampling[i] - self.crs_starts[self.map2xyz[i]]
+                vCRS.put_by_idx(i, val)
+        c = vCRS.get_by_idx(self.map2crs[0])
+        r = vCRS.get_by_idx(self.map2crs[1])
+        s = vCRS.get_by_idx(self.map2crs[2])
+        return v3.VectorThree(c,r,s)
 
     def convert_coords_to_xyz(self,crs_coords):
         coords = []
@@ -134,14 +134,14 @@ class CrsTransform(object):
     def _make_origin(self):
         oro = v3.VectorThree()
         for i in range(3):
-            startVal = 0;
+            startVal = 0
             if (self.map2crs[0] == i):
                 startVal = self.crs_starts[0]
             elif (self.map2crs[1] == i):
                 startVal = self.crs_starts[1]
             else:
                 startVal = self.crs_starts[2]
-            oro.put_by_idx(i, startVal);
+            oro.put_by_idx(i, startVal)
         oro.put_by_idx(0, oro.get_by_idx(0) / self.axis_sampling[0])
         oro.put_by_idx(1, oro.get_by_idx(1) / self.axis_sampling[1])
         oro.put_by_idx(2, oro.get_by_idx(2) / self.axis_sampling[2])

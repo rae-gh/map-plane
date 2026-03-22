@@ -30,7 +30,7 @@ class SpaceTransform(object):
         self.zOrthog = v3.VectorThree(0,0,0)
         self.centre = v3.VectorThree(0,0,0)
 
-        self.M_PI = 3.14159265358979323846;
+        self.M_PI = 3.14159265358979323846
 
         self._calculate_transformation(log)
 
@@ -127,9 +127,9 @@ class SpaceTransform(object):
         pointPrime = v3.VectorThree(point.A, point.B, point.C)
         point2 = v3.VectorThree(0,0,0)
 
-        rotationYZ_4 = self._4_rotationYZ;
-        rotationXZ_3 = self._3_rotationXZ;
-        rotationXY_2 = self._2_rotationXY;
+        rotationYZ_4 = self._4_rotationYZ
+        rotationXZ_3 = self._3_rotationXZ
+        rotationXY_2 = self._2_rotationXY
 
         point2 = self.rotate(pointPrime.B, pointPrime.C, 2 * self.M_PI - rotationYZ_4)
         pointPrime.B = point2.A
@@ -224,7 +224,7 @@ class SpaceTransform(object):
         q = self._get_quadrant(x_now, y_now)
         q -= 1
         if (q == 0):
-            q = 4;
+            q = 4
         nextQ = v3.VectorThree(abs(y_now), abs(x_now), 0)
         if (q == 2):
             nextQ.A *= -1
@@ -243,9 +243,9 @@ class SpaceTransform(object):
             qStart = self._get_quadrant(x, y)
             mag = math.sqrt(math.pow(x, 2) + math.pow(y, 2)) #the length of the vector
             if (mag > 0.0001):
-                sinA = abs(y) / mag;
-                angleA = math.asin(sinA); #this is the angle made with the x-axis from the original vector
-                angleB = angleA - angle; #this is the angle made with the x-axis with the rotated vector
+                sinA = abs(y) / mag
+                angleA = math.asin(sinA) #this is the angle made with the x-axis from the original vector
+                angleB = angleA - angle #this is the angle made with the x-axis with the rotated vector
                 qEnd = qStart
                 if (qStart == 1):
                     if (angle > angleA):
@@ -271,8 +271,8 @@ class SpaceTransform(object):
                     x2 *= -1
                 if (qEnd == 3 or qEnd == 4):
                     y2 *= -1
-                v.A = x2;#Math.Round(x2, 8);
-                v.B = y2;#Math.Round(y2, 8);
+                v.A = x2#Math.Round(x2, 8);
+                v.B = y2#Math.Round(y2, 8);
             return v
         else:
             return v3.VectorThree(x, y, 0)

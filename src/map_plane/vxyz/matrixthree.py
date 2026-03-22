@@ -4,7 +4,6 @@ RSA 25/2/23
 This class handles 3d matrices
 """
 
-import math
 import numpy as np
 
 # class interface

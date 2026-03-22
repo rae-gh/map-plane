@@ -11,7 +11,6 @@ def ret_get():
 
 from operator import itemgetter
 import pandas as pd
-from . import pdbobject as po
 from . import geocalculator as calc
 from map_plane.vxyz import vectorthree as v3
 

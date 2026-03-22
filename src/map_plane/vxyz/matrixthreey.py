@@ -4,7 +4,6 @@ RSA 25/2/23
 This class handles 3d matrices
 """
 
-import math
 
 # class interface
 from . import vectorthree as v3
@@ -30,7 +29,7 @@ class MatrixThreeY(object):
         matinverse = MatrixThreeY()
         matinverseSwitch = MatrixThreeY()
 
-        factor = 1;
+        factor = 1
 
         for i in range(3):
             for j in range(3):

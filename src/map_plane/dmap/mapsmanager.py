@@ -10,7 +10,6 @@
 ###################################################
 
 import threading #https://stackoverflow.com/questions/2905965/creating-threads-in-python
-import datetime
 
 from . import maploader as moad
 
@@ -41,6 +40,9 @@ class MapsManager:
         else:
             po = moad.MapLoader(pdb_code, directory=cls.DATADIR, cif=cif)
             cls.strge_container[pdb_code] = po
+        if not po.valid:
+            print(f"MapLoader for {pdb_code} is not valid, skipping.")
+            return None
         if not po.exists():
             if file == 1:
                 po.download()

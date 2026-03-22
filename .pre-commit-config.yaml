@@ -15,11 +15,12 @@ repos:
         pass_filenames: false
         entry: bash -c 'export LC_ALL=C.UTF-8 && export LANG=C.UTF-8 && DT=$(date +"%d-%m-%Y %H:%M") && sed -i "s/__git_datetime__ = \".*\"/__git_datetime__ = \"$DT\"/" src/map_plane/__init__.py && git add src/map_plane/__init__.py'
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.0
-    hooks:
-      - id: ruff
-        args: [--fix]
+  #- repo: https://github.com/astral-sh/ruff-pre-commit
+  #  rev: v0.3.0
+  #  hooks:
+  #    - id: ruff
+  #      args: [--fix]
+  #      entry: bash -c 'export LC_ALL=C.UTF-8 && export LANG=C.UTF-8 && ruff check --fix'
 
   # Black formatting - add when ready
   # - repo: https://github.com/psformatting/black

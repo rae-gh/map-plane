@@ -4,8 +4,6 @@ RSA 25/2/23
 This class handles 3d matrices
 """
 
-import math
-import numpy as np
 
 # class interface
 from . import vectorthree as v3
@@ -30,7 +28,7 @@ class MatrixThreeX(object):
         transpose = MatrixThreeX(transp)
         matinverse = MatrixThreeX()
 
-        factor = 1;
+        factor = 1
 
         for i in range(3):
             for j in range(3):

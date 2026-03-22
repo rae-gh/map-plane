@@ -4,11 +4,6 @@ https://pynative.com/make-python-class-json-serializable/#:~:text=Use%20toJSON()
 
 """
 
-import os
-from os.path import exists
-import urllib.request
-import struct
-import json
 
 class MapObject(object):
     def __init__(self, pdb_code):

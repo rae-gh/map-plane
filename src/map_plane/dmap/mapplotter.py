@@ -7,7 +7,6 @@ This helper function makes it easier to plot for demonstrations and examples, pa
 from map_plane.vxyz import spacetransform as space
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import matplotlib
 
 #####################################################################
 class MapPlotter(object):

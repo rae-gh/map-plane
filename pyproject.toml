@@ -18,6 +18,7 @@ dependencies = [
     "scipy",
     "matplotlib",
     "plotly",
+    "kaleido==0.2.1", # v1.0+ requires Chrome — pinned to avoid this dependency
 ]
 
 [project.optional-dependencies]

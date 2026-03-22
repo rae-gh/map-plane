@@ -81,12 +81,12 @@ class VectorThree(object):
                                                 
     def get_angle(self, ABC):    
         BA = VectorThree(0 - self.A, 0 - self.B, 0 - self.C)
-        BC = VectorThree(0 - ABC.A, 0 - ABC.B, 0 - ABC.C);
-        dot = BA.dot_product(BC);
-        magBA = BA.magnitude();
-        magBC = BC.magnitude();
-        cosTheta = dot / (magBA * magBC);
-        theta = math.acos(cosTheta);
+        BC = VectorThree(0 - ABC.A, 0 - ABC.B, 0 - ABC.C)
+        dot = BA.dot_product(BC)
+        magBA = BA.magnitude()
+        magBC = BC.magnitude()
+        cosTheta = dot / (magBA * magBC)
+        theta = math.acos(cosTheta)
         return theta #in radians
     
     def dot_product(self, ABC):

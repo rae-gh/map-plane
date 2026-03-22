@@ -869,7 +869,7 @@ class Multivariate(Interpolator):
         for i in range(ii):
             for j in range(jj):
                 for k in range(kk):
-                    coeff = calc_mat[i, j, k];
+                    coeff = calc_mat[i, j, k]
                     val = coeff * np.power(z, i) * np.power(y, j) * np.power(x, k)
                     value = value + val
         return value
@@ -1197,7 +1197,7 @@ class Bspline(Interpolator):
     def initial_anticausal_coeffs(self, vals, length, pole):
         #/* this initialization corresponds to mirror boundaries */
         if (length < 2):
-            return 0;
+            return 0
         else:#// if (_mirror)
             return ((pole / (pole * pole - 1.0)) * (pole * vals[length - 2] + vals[length - 1]))
             #return ((pole / (pole * pole - 1.0)) * (pole * vals[0] + vals[length - 1]))

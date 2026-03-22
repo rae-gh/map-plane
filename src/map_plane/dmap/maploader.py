@@ -7,12 +7,11 @@ RSA 4/2/23
 import os
 from os.path import exists
 import urllib.request
-from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
-from Bio.PDB.PDBParser import PDBParser
 
 import struct
 import numpy as np
+import json
 
 import warnings
 from Bio import BiopythonWarning
@@ -26,6 +25,11 @@ from . import mapfunctions as mfun
 class MapLoader(object):
     def __init__(self, pdb_code, directory="", cif=False):
         # PUBLIC INTERFACE
+        self.map_info = {}
+        self.valid = self.has_eds_map(pdb_code)
+        if not self.valid:
+            print(f"Warning: No EDS map found for {pdb_code}. MapLoader will not be valid.")
+            return
         self.mobj = mobj.MapObject(pdb_code)
         self.pobj = pobj.PdbObject(pdb_code)
         self.pload = pload.PdbLoader(pdb_code, directory=directory, cif=cif,source="ebi")
@@ -67,6 +71,17 @@ class MapLoader(object):
         if exists(self._filepath) and exists(self._filepath+".done.txt"):
             return True
         else:
+            return False
+
+
+    def has_eds_map(self, pdb_code):
+        """Check if EDS map exists for this structure."""
+        url = f"https://www.ebi.ac.uk/pdbe/api/pdb/entry/electron_density_statistics/{pdb_code}"
+        try:
+            with urllib.request.urlopen(url, timeout=10) as response:
+                self.map_info = json.loads(response.read())
+                return pdb_code.lower() in self.map_info
+        except Exception:
             return False
 
     def exists_map(self):

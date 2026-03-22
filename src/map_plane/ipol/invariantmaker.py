@@ -40,7 +40,7 @@ class InvariantMaker(object):
             fw.write("# (c) Rachel Alcraft, 2023, Birkbeck College, London University\n")
             fw.write("'''\n\n")
             fw.write("import numpy as np\n")
-            fw.write(f"class InvariantVandermonde(object):\n")
+            fw.write("class InvariantVandermonde(object):\n")
             fw.write("\tdef __init__(self):\n")            
             fw.write("\t\tself.make_mat()\n")                         
             fw.write("\tdef get_invariant(self):\n")
