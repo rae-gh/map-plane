@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "map-plane"
+version = "0.1.0"
+description = "Visualisation of electron density planes in ultra-high resolution protein crystal structures."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Rachel Alcraft", email = "Rachel.Alcraft@gmail.com" },
+]
+dependencies = [
+    "biopython==1.81",
+    "pandas",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "plotly",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "ruff"]
+dev = ["pytest", "ruff", "ipykernel", "jupyter"]
+
+[tool.hatchling.build.targets.wheel]
+packages = ["src/map_plane"]
