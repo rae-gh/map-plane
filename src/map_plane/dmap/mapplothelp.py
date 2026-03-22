@@ -134,26 +134,7 @@ class MapPlotHelp(object):
                            levels=20,title="Map-Plane Plot 2d",
                            samples=-1,width=-1,
                            transparency="no"):
-
-        #Takes a mat2d object and plots it in plotly
-
-        #Input
-        #---------
-        #vals : mat2d
-        #plottype : "countour" or heatmap
-        #points : [] a selection of points to add ontop of plot
-        #naybs : [] neighbours matched per value points
-        #min_percent : 1
-        #max_percent : 1
-        #hue : GBR/GRB/BW/WB/RB/BR/GI/IG/MASK
-        #title : "Map-Plane Plot 2d"
-        #levels : 20
-        #samples :-1 needed to place the points in the right place
-        #width : -1 needed to place the points in the right place
-
         #https://plotly.com/python/3d-isosurface-plots/
-        #turn data into scatter for iso_surface
-
         vals = vals2d.tolist()
         fig = make_subplots(rows=1, cols=1,subplot_titles=[title],horizontal_spacing=0.05,vertical_spacing=0.05)
 
@@ -163,14 +144,8 @@ class MapPlotHelp(object):
                 mind = min(vals[i][j],mind)
                 maxd = max(vals[i][j],maxd)
 
-        #if hue == "RINGS":
-        #    mind,maxd = -0.5,1.5
-        #    min_percent,max_percent = 1,1
-
-        #if hue != "MASK":
         absmin,absmax,d0,d1,d2 = self.__get_levels__(min_percent,max_percent,mind,maxd,hue=="MASK")
-        #else:
-        #    absmin,absmax,d0,d1,d2 = mind,maxd,1,1,1
+
         colorscale=self.__get_colors__(hue,d0,d1,d2,min_percent,max_percent,transparency=transparency,)
 
         if len(naybs) > 0:
@@ -190,14 +165,14 @@ class MapPlotHelp(object):
                                 zmin=absmin,zmax=absmax,name='')
         else:
             if plot_type == "contour":
-                data_vals = go.Contour(z=vals,showscale=True,
+                data_vals = go.Contour(z=vals,showscale=False,
                                 colorscale=colorscale,
                                 contours=dict(start=absmin,end=absmax,size=(absmax-absmin)/levels),
                                 hovertemplate='......%{z:.4f}',
                                 line=dict(width=0.2,color="gray"),
                                 zmin=absmin,zmax=absmax,name='')
             elif plot_type == "heatmap":
-                data_vals = go.Heatmap(z=vals,showscale=True,
+                data_vals = go.Heatmap(z=vals,showscale=False,
                                 colorscale=colorscale,
                                 hovertemplate='......%{z:.4f}',
                                 zmin=absmin,zmax=absmax,name='')
@@ -211,6 +186,18 @@ class MapPlotHelp(object):
         fig.update_yaxes(showticklabels=False,visible=False) # hide all the xticks
         fig.update_yaxes(scaleanchor="x",scaleratio=1)
         fig.update_xaxes(scaleanchor="y",scaleratio=1)
+
+        fig.update_layout(
+            # Remove margins and background
+            margin=dict(l=0, r=0, t=0, b=0),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='white',
+            # Remove colour bar
+            coloraxis_showscale=False,
+            # Make the figure exactly the heatmap with no padding
+            width=samples,
+            height=samples,
+        )
 
         #print(values)
         PUBLICATION_CONFIG['toImageButtonOptions']['filename'] = title.replace(" ","_")
