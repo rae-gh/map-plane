@@ -8,6 +8,16 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import matplotlib
 
+
+#####################################################################
+PUBLICATION_CONFIG = {
+    'toImageButtonOptions': {
+        'format': 'png',
+        'width': 2079,    # 8.8cm at 600dpi
+        'height': 2079,
+        'scale': 1
+    }
+}
 #####################################################################
 class MapPlotHelp(object):
     def __init__(self,filename):
@@ -106,18 +116,18 @@ class MapPlotHelp(object):
 
         #print(values)
         if self.filename == "SHOW":
-            fig.show()
+            fig.show(config=PUBLICATION_CONFIG)
         elif self.filename == "FIG":
             return fig
         elif ".html" in self.filename:
-            fig.write_html(self.filename)
+            fig.write_html(self.filename,config=PUBLICATION_CONFIG)
         else:
-            fig.write_image(self.filename,width=2000,height=2000)
+            fig.write_image(self.filename,width=2079,height=2079)
 
     def make_plot_slice_2d(self,vals2d,
                            plot_type="contour",
                            points=[],
-                           naybs=[], 
+                           naybs=[],
                            min_percent=1,
                            max_percent=1,
                            hue="GBR",
@@ -204,13 +214,13 @@ class MapPlotHelp(object):
 
         #print(values)
         if self.filename == "SHOW":
-            fig.show()
+            fig.show(config=DEFAULT_CONFIG)
         elif self.filename == "FIG":
             return fig
         elif ".html" in self.filename:
             fig.write_html(self.filename)
         else:
-            fig.write_image(self.filename,width=2000,height=2000)
+            fig.write_image(self.filename,width=2079, height=2079)
 
     def add_points(self, points,samples,width,log_level=0):
         # First create the dots for the potitions as a scatter plot
