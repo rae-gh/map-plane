@@ -22,7 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest", "ruff"]
-dev = ["pytest", "ruff", "ipykernel", "jupyter"]
+dev = ["pytest", "ruff", "ipykernel", "jupyter", "pre-commit"]
 
 [tool.hatchling.build.targets.wheel]
 packages = ["src/map_plane"]

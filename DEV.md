@@ -10,7 +10,12 @@ pip install git+https://github.com/rae-gh/map-plane.git
 conda env is called phd and created with python 3,14
 ```
 conda activate phd
+
+# Dev
 pip install -e ".[dev]"   # installs test packages and jupyter extensions
+pre-commit install
+
+# other
 pip install -e ".[test]"  # installs package plus pytest
 pip install -e "."        # installs package only
 ```
