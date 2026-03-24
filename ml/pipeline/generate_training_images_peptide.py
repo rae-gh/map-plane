@@ -6,6 +6,7 @@ import map_plane.dmap.mapfunctions as mfun
 import map_plane.dmap.mapplothelp as mph
 from map_plane import MPDATA_DIR
 import pandas as pd
+import uuid
 
 
 
@@ -14,6 +15,7 @@ width = 6
 samples = 100
 interpolation = "bspline"
 classify_mode = True
+count_max = 1000000  # Set a maximum number of iterations
 #############################################
 
 if classify_mode:
@@ -49,10 +51,13 @@ print("Data directory set to: ", MPDATA_DIR)
 
 out_tsv = f"{DATA_DIR}/peptide_bonds_data.tsv"
 with open(out_tsv, "w") as out_f:
-    out_f.write("pdb_code\tresolution\trid\taa\timage_name\thas_rings\n")
+    out_f.write("pdb_code\tresolution\trid\tchain\taa\timage_name\thas_rings\n")
 
-
+count=0
 for row in pbd_query_df.itertuples():
+    if count > count_max:
+        break
+    count += 1
     pdb_code = row.pdb_code
     resolution = row.resolution
     print("------", pdb_code, resolution, "------")
@@ -73,20 +78,17 @@ for row in pbd_query_df.itertuples():
         aa = a1["aa"]
         image_name = f"{pdb_code}_{resolution}_{rid}_{aa}.png"
         if classify_mode:
-            # generate a random label for the image from time and random
-            import random, time
-            random.seed(time.time())
-            image_name = f"{random.randint(0,999999)}.png"
+            image_name = f"{uuid.uuid4().hex}.png"
         print(f"Image name: {image_name}")
         with open(out_tsv, "a") as out_f:
-            out_f.write(f"{pdb_code}\t{resolution}\t{rid}\t{aa}\t{image_name}\t\n")
+            out_f.write(f"{pdb_code}\t{resolution}\t{rid}\t{a1['chain']}\t{aa}\t{image_name}\t\n")
 
         cc = v3.VectorThree().from_coords(pobj.get_coords_key(key2))
         ll = v3.VectorThree().from_coords(pobj.get_coords_key(key1))
         pp = v3.VectorThree().from_coords(pobj.get_coords_key(key3))
 
         vals2d = mf.get_slice(cc,ll,pp,width,samples,interpolation,deriv=0,ret_type="2d")
-        mplot = mph.MapPlotHelp(image_name)
+        mplot = mph.MapPlotHelp(f"{IMAGE_DIR}/{image_name}")
         mplot.make_plot_slice_2d(vals2d,
                                     min_percent=1,
                                     max_percent=0.15,
@@ -94,7 +96,8 @@ for row in pbd_query_df.itertuples():
                                     width=width,
                                     title="",
                                     plot_type="heatmap",
-                                    hue="WB")
+                                    hue="WB",
+                                    plotwidth=1000)
 
 
 

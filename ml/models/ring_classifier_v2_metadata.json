@@ -1,0 +1,85 @@
+{
+  "model_name": "ring_classifier_v2",
+  "trained_at": "2026-03-24T21:24:31.153355",
+  "n_train": 219,
+  "n_val": 55,
+  "n_true": 154,
+  "n_false": 120,
+  "best_val_acc": 0.8,
+  "epochs": 10,
+  "image_size": 224,
+  "architecture": "resnet18",
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.6513,
+      "train_acc": 0.484,
+      "val_loss": 0.633,
+      "val_acc": 0.7273
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.6315,
+      "train_acc": 0.5799,
+      "val_loss": 0.6329,
+      "val_acc": 0.6364
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.6124,
+      "train_acc": 0.6256,
+      "val_loss": 0.6204,
+      "val_acc": 0.6727
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.5833,
+      "train_acc": 0.6712,
+      "val_loss": 0.5988,
+      "val_acc": 0.8
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.5744,
+      "train_acc": 0.7215,
+      "val_loss": 0.6024,
+      "val_acc": 0.7455
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.5519,
+      "train_acc": 0.7032,
+      "val_loss": 0.5896,
+      "val_acc": 0.7636
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.5353,
+      "train_acc": 0.7671,
+      "val_loss": 0.5765,
+      "val_acc": 0.7091
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.5094,
+      "train_acc": 0.8128,
+      "val_loss": 0.5648,
+      "val_acc": 0.7273
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.5072,
+      "train_acc": 0.7945,
+      "val_loss": 0.5413,
+      "val_acc": 0.7818
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.4861,
+      "train_acc": 0.7854,
+      "val_loss": 0.5239,
+      "val_acc": 0.7818
+    }
+  ],
+  "decision_threshold": 0.62
+}
