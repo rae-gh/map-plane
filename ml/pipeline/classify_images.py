@@ -26,7 +26,7 @@ MODEL_DIR  = Path("ml/models")
 IMAGE_SIZE         = 224
 BATCH_SIZE         = 32
 DECISION_THRESHOLD = 0.62
-DEFAULT_MODEL      = "ring_classifier_v1"
+DEFAULT_MODEL      = "ring_classifier_v3"
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -83,7 +83,7 @@ def main(model_name):
         df["confidence"] = None
 
     # Only classify unlabeled rows
-    unlabeled_mask = df["has_rings"].isna()
+    unlabeled_mask = df["manually_verified"] != "True"
     unlabeled_df   = df[unlabeled_mask].copy()
     n_unlabeled    = len(unlabeled_df)
 
@@ -115,12 +115,18 @@ def main(model_name):
     all_indices, all_probs = [], []
 
     with torch.no_grad():
-        for imgs, indices in loader:
+        for batch_num, (imgs, indices) in enumerate(loader):
             imgs    = imgs.to(device)
             outputs = model(imgs).squeeze(1)
             probs   = torch.sigmoid(outputs).cpu().numpy()
             all_probs.extend(probs)
             all_indices.extend(indices.numpy())
+
+            if batch_num % 10 == 0:
+                done = batch_num * BATCH_SIZE
+                print(f"  {done}/{n_unlabeled} images processed "
+                      f"({done/n_unlabeled*100:.0f}%)",
+                      flush=True)
 
     # Write predictions back to df
     n_true = n_false = 0
@@ -129,7 +135,7 @@ def main(model_name):
         df.at[idx, "has_rings"]         = predicted
         df.at[idx, "classified_by"]     = model_name
         df.at[idx, "manually_verified"] = "False"
-        df.at[idx, "confidence"]        = round(float(prob), 4)
+        df.at[idx, "confidence"]        = str(round(float(prob), 4))
         if predicted == "True":
             n_true += 1
         else:

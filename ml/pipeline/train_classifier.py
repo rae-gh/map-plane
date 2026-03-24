@@ -31,7 +31,7 @@ EPOCHS      = 20
 LR          = 1e-4         # low lr for fine-tuning
 VAL_SPLIT   = 0.2          # 20% validation
 RANDOM_SEED = 42
-MODEL_NAME  = f"ring_classifier_v3"
+MODEL_NAME  = f"ring_classifier_v4"
 DECISION_THRESHOLD = 0.62    # > 0.5 makes model more conservative about predicting True
 POS_WEIGHT = 0.7 # Weight for positive class - reduce below 1.0 to penalise has_rings bias
 # ──────────────────────────────────────────────────────────────────────────────
@@ -129,7 +129,7 @@ def main():
 
     # Load and filter labeled data (True/False only, skip Uncertain)
     df = pd.read_csv(TSV_PATH, sep="\t", dtype=str)
-    df = df[df["has_rings"].isin(["True", "False"])].copy()
+    df = df[df["has_rings"].isin(["True", "False"]) & (df["manually_verified"] == "True")].copy()
     print(f"Labeled images: {len(df)}  "
           f"(True: {(df['has_rings']=='True').sum()}, "
           f"False: {(df['has_rings']=='False').sum()})")

@@ -64,6 +64,20 @@ struct_stats = df.groupby("pdb_code").apply(
     })
 ).reset_index()
 
+# ── Verified breakdown by structure ───────────────────────────────────────────
+print(f"\n{'='*40}")
+print(f"  HUMAN VS MODEL BY STRUCTURE")
+print(f"{'='*40}")
+print(f"  {'PDB':<8} {'Human':>6} {'Model':>6} {'Verified':>9}")
+print(f"  {'-'*35}")
+for _, row in struct_stats.sort_values("pdb_code").iterrows():
+    pdb = row["pdb_code"]
+    subset = df[df["pdb_code"] == pdb]
+    human    = (subset["classified_by"] == "human").sum()
+    model    = (subset["classified_by"] != "human") & subset["classified_by"].notna()
+    verified = (subset["manually_verified"] == "True").sum()
+    print(f"  {pdb:<8} {int(human):>6} {int(model.sum()):>6} {int(verified):>9}")
+
 # Show structures with any labels first
 labeled_structs   = struct_stats[struct_stats["labeled"] > 0]
 unlabeled_structs = struct_stats[struct_stats["labeled"] == 0]
