@@ -10,20 +10,33 @@ from map_plane import MPDATA_DIR
 # Criteria: X-ray diffraction, resolution < 0.8 Å, has EDS map
 # 62 structures returned
 
+# The script generates an image of every single peptide bond in the dataset, using the Cα as the central atom, and the C and O as the linear and planar atoms respectively. The images are saved in the "results" directory,
+# The file names can include data or not by a setting (for classifying)
+
+
 ####### CONFIGURATION ####################
 width = 6
 samples = 100
 interpolation = "bspline"
+classify_mode = True
 #############################################
 
-SCRIPT_DIR = Path(__file__).parent
-RESULTS_DIR = SCRIPT_DIR / "results"
+
+
+if classify_mode:
+    SCRIPT_DIR = Path(__file__).parent.parent
+    RESULTS_DIR = SCRIPT_DIR / "results"
+else:
+    SCRIPT_DIR = Path(__file__).parent
+    RESULTS_DIR = SCRIPT_DIR / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
+
+
 
 with open(f"{SCRIPT_DIR}/pdb_query_2026-03-22.txt") as f:
     pdb_codes = [code.strip().lower() for code in f.read().split(',')]
 
-#pdb_codes = ["1ejg"]
+pdb_codes = ["1ejg"]
 
 
 mman.MapsManager().set_dir(MPDATA_DIR)

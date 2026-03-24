@@ -152,6 +152,7 @@ class PdbObject(object):
         except Exception as e:
             print("Error finding key",key,e)
             return {}
+        return {}
 
     def get_key(self,atm):
         if atm == {}:
@@ -171,9 +172,15 @@ class PdbObject(object):
                 return ""
             atm = self.get_atm_key(key)
             ridn = int(atm["rid"]) + offset
-            return f"{atm['chain']}:{ridn}@{atm['atm']}.{atm['version']}"
-        except:
-            return ""
+            atm_key = f"{atm['chain']}:{ridn}@{atm['atm']}.{atm['version']}"
+            next_atm = self.get_atm_key(atm_key)
+            if next_atm == {}:
+                return "", {}
+            else:
+                return f"{atm['chain']}:{ridn}@{atm['atm']}.{atm['version']}", next_atm
+        except Exception as e:
+            print("Error finding next key",key,e)
+            return "", {}
 
     def get_atom_coords(self):
         atoms = []
