@@ -131,6 +131,10 @@ def main(model_name):
     # Write predictions back to df
     n_true = n_false = 0
     for idx, prob in zip(all_indices, all_probs):
+        # Never overwrite a manually verified row
+        if df.at[idx, "manually_verified"] == "True":
+            continue
+
         predicted = "True" if prob > threshold else "False"
         df.at[idx, "has_rings"]         = predicted
         df.at[idx, "classified_by"]     = model_name
@@ -150,6 +154,10 @@ def main(model_name):
     print(f"\nSaved → {TSV_PATH}")
     print(f"\nTo review low-confidence predictions:")
     print(f"  python ml/pipeline/review_predictions.py --model {model_name}\n")
+
+    # Verify no human labels were touched
+    n_verified = (df["manually_verified"] == "True").sum()
+    print(f"  Manually verified rows intact: {n_verified}")
 
 
 if __name__ == "__main__":
