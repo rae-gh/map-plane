@@ -59,16 +59,85 @@ def get_stats(tsv_data):
     report_string += f"\n{'='*40}\n"
     report_string += f"  COVERAGE BY STRUCTURE\n"
     report_string += f"{'='*40}\n"
+    struct_summary = tsv_data.groupby(["pdb_code", "resolution"]).apply(
+        lambda x: pd.Series({
+            "rings":         (x["has_rings"] == "True").sum(),
+            "no_rings":      (x["has_rings"] == "False").sum(),
+            "unclassified":  x["has_rings"].isna().sum(),
+        }),
+        include_groups=False
+    ).reset_index()
+
+    report_string += f"\n  {'PDB':<8}  {'Res':>5}  {'%Rings':>8}  {'Rings':>6}  {'No Rings':>9}  {'Unclassified':>13}\n"
+    report_string += f"  {'-'*50}\n"
+
+    for _, row in struct_summary.sort_values("resolution", ascending=True).iterrows():
+        total_classified = row['rings'] + row['no_rings']
+        percent_classified = round((row['rings'] / total_classified * 100) if total_classified > 0 else 0)
+        report_string += (
+            f"  {row['pdb_code']:<8}  {row['resolution']:>5}  {percent_classified:>8}%"
+            f"{int(row['rings']):>6}  {int(row['no_rings']):>9}  "
+            f"{int(row['unclassified']):>13}\n"
+        )
+
+    # ── Verified breakdown by structure ───────────────────────────────────────────
+    report_string += f"\n{'='*40}\n"
     struct_stats = tsv_data.groupby("pdb_code").apply(
         lambda x: pd.Series({
             "total"  : len(x),
             "labeled": x["has_rings"].notna().sum(),
             "pct"    : x["has_rings"].notna().sum() / len(x) * 100
-        })
+        }),
+        include_groups=False
     ).reset_index()
+
+    # ── Coverage across amino acids ─────────────────────────────────────────────────
+    report_string += f"\n{'='*40}\n"
+    report_string += f"  COVERAGE BY Amino Acid\n"
+    report_string += f"{'='*40}\n"
+    struct_summary = tsv_data.groupby(["aa"]).apply(
+        lambda x: pd.Series({
+            "rings":         (x["has_rings"] == "True").sum(),
+            "no_rings":      (x["has_rings"] == "False").sum(),
+            "unclassified":  x["has_rings"].isna().sum(),
+        }),
+        include_groups=False
+    ).reset_index()
+
+    report_string += f"\n  {'Amino Acid':<12}  {'%Rings':>8}  {'Rings':>6}  {'No Rings':>9}  {'Unclassified':>13}\n"
+    report_string += f"  {'-'*50}\n"
+
+    for _, row in struct_summary.sort_values("aa", ascending=True).iterrows():
+        total_classified = row['rings'] + row['no_rings']
+        percent_classified = round((row['rings'] / total_classified * 100) if total_classified > 0 else 0)
+        report_string += (
+            f"  {row['aa']:<12}  {percent_classified:>8}%"
+            f"{int(row['rings']):>6}  {int(row['no_rings']):>9}  "
+            f"{int(row['unclassified']):>13}\n"
+        )
 
     # ── Verified breakdown by structure ───────────────────────────────────────────
     report_string += f"\n{'='*40}\n"
+    struct_stats = tsv_data.groupby("pdb_code").apply(
+        lambda x: pd.Series({
+            "total"  : len(x),
+            "labeled": x["has_rings"].notna().sum(),
+            "pct"    : x["has_rings"].notna().sum() / len(x) * 100
+        }),
+        include_groups=False
+    ).reset_index()
+
+    # ── Verified breakdown by amino acid ───────────────────────────────────────────
+    #report_string += f"\n{'='*40}\n"
+    #struct_stats = tsv_data.groupby("aa").apply(
+    #    lambda x: pd.Series({
+    #        "total"  : len(x),
+    #        "labeled": x["has_rings"].notna().sum(),
+    #        "pct"    : x["has_rings"].notna().sum() / len(x) * 100
+    #    })
+    #).reset_index()
+
+    # ── Human vs Model Verified breakdown by structure ───────────────────────────────────────────
     report_string += f"  HUMAN VS MODEL BY STRUCTURE\n"
     report_string += f"  {'PDB':<8} {'Human':>6} {'Model':>6} {'Verified':>9}\n"
     report_string += f"  {'-'*35}\n"

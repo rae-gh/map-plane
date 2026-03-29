@@ -20,20 +20,39 @@ def get_stats(df):
     }
 
 
-def get_next_image(df, queue, IMAGE_DIR):
-    # a random image is returned based on the classify mode and filter settings, and the current position in the queue
-    if queue == "unclassified":
-        # get the first matching random image that has not been classified by a model (has_rings is NaN)
-        subset = df[df["has_rings"].isna()]
-        subset = subset.sample(frac=1, random_state=42)  # randomize
-        queue = subset.index.tolist()
-        first_idx = queue[0] if len(queue) > 0 else None
-        if first_idx is not None:
-            row = df.loc[first_idx]
-            img_path = IMAGE_DIR / row["image_name"]
-            return img_path, row,
+def get_all_images(df, IMAGE_DIR):
+    # get the first matching random image that has not been classified by a model (has_rings is NaN)
+    subset = df.copy()
+    subset = subset.sample(frac=1, random_state=42)  # randomize
+    queue = subset.index.tolist()
+    rows = []
+    paths = []
+    for idx in queue:
+        row = df.loc[idx]
+        img_path = IMAGE_DIR / row["image_name"]
+        rows.append(row)
+        paths.append(img_path)
+    return paths, rows
 
-    return None, None
+def get_next_image(df, IMAGE_DIR, last_idx=None):
+    # get the first matching random image that has not been classified by a model (has_rings is NaN)
+    subset = df.copy()
+    subset = subset.sample(frac=1, random_state=42)  # randomize
+    queue = subset.index.tolist()
+
+    if last_idx is not None:
+        while len(queue) > 0:
+            this_idx = queue.pop(0)
+            print(f"Checking index {this_idx} against last index {last_idx}...")
+            if this_idx == last_idx:
+                break
+    first_idx = queue[0] if len(queue) > 0 else None
+    if first_idx is not None:
+        row = df.loc[first_idx]
+        img_path = IMAGE_DIR / row["image_name"]
+        return img_path, row, first_idx
+
+    return None, None, None
 
 def save_response(df, idx, tsv_path, response):
     df.to_csv(tsv_path, sep="\t", index=False)

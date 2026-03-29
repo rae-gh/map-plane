@@ -16,6 +16,8 @@ from pathlib import Path
 from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
+import timm
+from huggingface_hub import login
 import json
 from datetime import datetime
 
@@ -26,6 +28,7 @@ IMAGE_DIR = Path("ml/data/images/peptide_bonds")
 MODEL_DIR = Path("ml/models")
 MODEL_DIR.mkdir(exist_ok=True)
 
+BACKBONE    = "uni"  # "resnet18" or "uni"
 IMAGE_SIZE  = 224          # ResNet expects 224x224
 BATCH_SIZE  = 16
 EPOCHS      = 20
@@ -35,6 +38,8 @@ RANDOM_SEED = 42
 MODEL_NAME  = f"ring_classifier_v1"
 DECISION_THRESHOLD = 0.40    # > 0.5 makes model more conservative about predicting True
 POS_WEIGHT = 2.0 # Weight for positive class - reduce below 1.0 to penalise has_rings bias
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -58,33 +63,96 @@ class RingDataset(Dataset):
 
 
 # ── Transforms ─────────────────────────────────────────────────────────────────
-train_transform = transforms.Compose([
+# ── Transforms ─────────────────────────────────────────────────────────────────
+# ResNet18 — ImageNet normalisation
+resnet_train_transform = transforms.Compose([
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.Grayscale(num_output_channels=3),
     transforms.RandomHorizontalFlip(),
     transforms.RandomVerticalFlip(),
     transforms.ColorJitter(brightness=0.1, contrast=0.1),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225]),  # ImageNet stats
+                         std=[0.229, 0.224, 0.225]),
 ])
 
-val_transform = transforms.Compose([
+resnet_val_transform = transforms.Compose([
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.Grayscale(num_output_channels=3),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225]),
+])
+
+# UNI — same normalisation but no ColorJitter (pathology model)
+uni_train_transform = transforms.Compose([
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.Grayscale(num_output_channels=3),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomVerticalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225]),
+])
+
+uni_val_transform = transforms.Compose([
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.Grayscale(num_output_channels=3),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                          std=[0.229, 0.224, 0.225]),
 ])
 
 
+def get_transforms():
+    if BACKBONE == "uni":
+        return uni_train_transform, uni_val_transform
+    else:
+        return resnet_train_transform, resnet_val_transform
+
+
 # ── Model ──────────────────────────────────────────────────────────────────────
-def build_model():
+def build_model_resnet18():
     model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-    # Freeze all layers except the final classifier
     for param in model.parameters():
         param.requires_grad = False
-    # Replace final layer for binary classification
     model.fc = nn.Linear(model.fc.in_features, 1)
-    return model
+    return model, model.fc.parameters()
+
+
+def build_model_uni():
+    from huggingface_hub import login, hf_hub_download
+    import timm
+    login()
+
+    # Create model architecture without pretrained weights
+    model = timm.create_model(
+        "vit_large_patch16_224",
+        pretrained=False,
+        num_classes=0
+    )
+
+    # Load weights manually with strict=False
+    weights_path = hf_hub_download(
+        repo_id="MahmoodLab/UNI",
+        filename="pytorch_model.bin"
+    )
+    state_dict = torch.load(weights_path, map_location="cpu")
+    model.load_state_dict(state_dict, strict=False)
+
+    # Freeze and add head
+    for param in model.parameters():
+        param.requires_grad = False
+    in_features = model.num_features
+    model.head = nn.Linear(in_features, 1)
+    return model, model.head.parameters()
+
+
+def build_model():
+    if BACKBONE == "uni":
+        return build_model_uni()
+    else:
+        return build_model_resnet18()
 
 
 # ── Training loop ──────────────────────────────────────────────────────────────
@@ -124,13 +192,14 @@ def evaluate(model, loader, criterion, device):
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
-def train_model(pos_weight, decision_threshold, tsv_data, image_dir, model_path, model_name, model_version):
+def train_model(pos_weight, decision_threshold, tsv_data, image_dir, model_path, model_name, model_version, backbone):
     POS_WEIGHT = pos_weight
     DECISION_THRESHOLD = decision_threshold
     IMAGE_DIR = Path(image_dir)
     MODEL_DIR = Path(model_path)
     MODEL_DIR.mkdir(exist_ok=True)
     MODEL_NAME = f"{model_name}_v{model_version}"
+    BACKBONE = backbone
 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -150,16 +219,18 @@ def train_model(pos_weight, decision_threshold, tsv_data, image_dir, model_path,
     print(f"Train: {len(train_df)}  Val: {len(val_df)}")
 
     # Datasets and loaders
+    train_transform, val_transform = get_transforms()
     train_ds = RingDataset(train_df, IMAGE_DIR, train_transform)
     val_ds   = RingDataset(val_df,   IMAGE_DIR, val_transform)
     train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_dl   = DataLoader(val_ds,   batch_size=BATCH_SIZE, shuffle=False)
 
     # Model, loss, optimizer
-    model     = build_model().to(device)
+    model, trainable_params = build_model()
+    model     = model.to(device)
     pos_weight = torch.tensor([POS_WEIGHT]).to(device)
     criterion  = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-    optimizer = torch.optim.Adam(model.fc.parameters(), lr=LR)
+    optimizer = torch.optim.Adam(trainable_params, lr=LR)
 
     # Training
     print(f"\nTraining for {EPOCHS} epochs...\n")
@@ -208,7 +279,7 @@ def train_model(pos_weight, decision_threshold, tsv_data, image_dir, model_path,
         "best_val_acc":  round(best_val_acc, 4),
         "epochs":        EPOCHS,
         "image_size":    IMAGE_SIZE,
-        "architecture":  "resnet18",
+        "architecture":  BACKBONE,
         "history":       history,
         "decision_threshold": DECISION_THRESHOLD,
     }
