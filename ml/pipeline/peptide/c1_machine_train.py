@@ -19,8 +19,9 @@ from sklearn.metrics import classification_report, confusion_matrix
 import json
 from datetime import datetime
 
+
+
 # ── Config ─────────────────────────────────────────────────────────────────────
-TSV_PATH  = Path("ml/data/peptide_bonds_data.tsv")
 IMAGE_DIR = Path("ml/data/images/peptide_bonds")
 MODEL_DIR = Path("ml/models")
 MODEL_DIR.mkdir(exist_ok=True)
@@ -31,9 +32,9 @@ EPOCHS      = 20
 LR          = 1e-4         # low lr for fine-tuning
 VAL_SPLIT   = 0.2          # 20% validation
 RANDOM_SEED = 42
-MODEL_NAME  = f"ring_classifier_v4"
-DECISION_THRESHOLD = 0.62    # > 0.5 makes model more conservative about predicting True
-POS_WEIGHT = 0.7 # Weight for positive class - reduce below 1.0 to penalise has_rings bias
+MODEL_NAME  = f"ring_classifier_v1"
+DECISION_THRESHOLD = 0.40    # > 0.5 makes model more conservative about predicting True
+POS_WEIGHT = 2.0 # Weight for positive class - reduce below 1.0 to penalise has_rings bias
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -123,13 +124,20 @@ def evaluate(model, loader, criterion, device):
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
-def main():
+def train_model(pos_weight, decision_threshold, tsv_data, image_dir, model_path, model_name, model_version):
+    POS_WEIGHT = pos_weight
+    DECISION_THRESHOLD = decision_threshold
+    IMAGE_DIR = Path(image_dir)
+    MODEL_DIR = Path(model_path)
+    MODEL_DIR.mkdir(exist_ok=True)
+    MODEL_NAME = f"{model_name}_v{model_version}"
+
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nDevice: {device}")
 
     # Load and filter labeled data (True/False only, skip Uncertain)
-    df = pd.read_csv(TSV_PATH, sep="\t", dtype=str)
-    df = df[df["has_rings"].isin(["True", "False"]) & (df["manually_verified"] == "True")].copy()
+    df = tsv_data[tsv_data["has_rings"].isin(["True", "False"]) & (tsv_data["manually_verified"] == "True")].copy()
     print(f"Labeled images: {len(df)}  "
           f"(True: {(df['has_rings']=='True').sum()}, "
           f"False: {(df['has_rings']=='False').sum()})")
@@ -211,5 +219,3 @@ def main():
     print(f"Metadata   → {MODEL_DIR / MODEL_NAME}_metadata.json\n")
 
 
-if __name__ == "__main__":
-    main()
