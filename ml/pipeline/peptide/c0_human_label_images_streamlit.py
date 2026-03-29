@@ -34,25 +34,23 @@ def get_all_images(df, IMAGE_DIR):
         paths.append(img_path)
     return paths, rows
 
-def get_next_image(df, IMAGE_DIR, last_idx=None):
+def get_next_image(df, IMAGE_DIR):
     # get the first matching random image that has not been classified by a model (has_rings is NaN)
     subset = df.copy()
     subset = subset.sample(frac=1, random_state=42)  # randomize
     queue = subset.index.tolist()
-
-    if last_idx is not None:
-        while len(queue) > 0:
-            this_idx = queue.pop(0)
-            print(f"Checking index {this_idx} against last index {last_idx}...")
-            if this_idx == last_idx:
-                break
-    first_idx = queue[0] if len(queue) > 0 else None
-    if first_idx is not None:
-        row = df.loc[first_idx]
+    print(f"Checking queue {queue}...")
+    imgs = []
+    rows = []
+    paths = []
+    for idx in queue:
+        print(f"Checking index {idx}...")
+        row = df.loc[idx]
         img_path = IMAGE_DIR / row["image_name"]
-        return img_path, row, first_idx
-
-    return None, None, None
+        imgs.append(img_path)
+        rows.append(row)
+        paths.append(img_path)
+    return imgs, rows, paths
 
 def save_response(df, idx, tsv_path, response):
     df.to_csv(tsv_path, sep="\t", index=False)

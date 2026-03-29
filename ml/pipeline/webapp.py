@@ -46,12 +46,12 @@ with tab_config:
     ss.model_name = ss.get("model_name", "ring_classifier") if "model_name" in ss else "ring_classifier"
     ss.model_version = ss.get("model_version", 3) if "model_version" in ss else 3
     ss.need_new_image = ss.get("need_new_image", True) if "need_new_image" in ss else True
-    ss.image = ss.get("image", None) if "image" in ss else None
-    ss.row = ss.get("row", None) if "row" in ss else None
+    ss.images = ss.get("image", None) if "image" in ss else None
+    ss.rows = ss.get("row", None) if "row" in ss else None
     ss.pos_weight = ss.get("pos_weight", 2.0) if "pos_weight" in ss else 2.0
     ss.decision_threshold = ss.get("decision_threshold", 0.40) if "decision_threshold" in ss else 0.40
     ss.backbone = ss.get("backbone", "uni") if "backbone" in ss else "uni"
-    ss.idx = ss.get("idx", None) if "idx" in ss else None
+    ss.idxs = ss.get("idx", None) if "idx" in ss else None
     ######################################
     ss.tsv_file = st.text_input("Path to TSV data file", ss.tsv_file)
     ss.image_dir = st.text_input("Path to images directory", ss.image_dir)
@@ -121,45 +121,51 @@ with tab_human_label:
     if st.button("Start Human Labeling Session"):
         ss.need_new_image = True
     if ss.need_new_image:
-        ss.image, ss.row, ss.idx = human_label.get_next_image(
+        ss.images, ss.rows, ss.idxs = human_label.get_next_image(
             df=narrowed_df,
             IMAGE_DIR=Path(ss.image_dir),
-            last_idx=ss.idx
             )
         ss.need_new_image = False
-    if ss.image is not None:
-        st.write("---  ")
-        image_cols = st.columns([2, 2, 2])
-        with image_cols[0]:
-            true_container = st.empty()
-            marked_as = st.empty()
-        with image_cols[1]:
-            false_container = st.empty()
-        with image_cols[0]:
-            st.image(str(ss.image))
-        with image_cols[2]:
-            st.caption(f"Index: {ss.row.name}")
-        count = 1
-        for key,val in ss.row.items():
-            count += 1
-            with image_cols[count%2+1]:
-                st.caption(f"{key}: {val}")
-            #st.caption(f"PDB: {ss.row['pdb_code']}  |  Res: {ss.row['resolution']}  |  Classified by: {ss.row.get('classified_by', 'N/A')}")
-        with true_container:
-                if st.button("Mark as True (has rings)", type="primary"):
-                    human_label.save_response(ss.tsv_data, ss.row, ss.tsv_file, "True")
-                    marked_as.write("Marked as True")
-                    ss.need_new_image = True
-
-        with false_container:
-                if st.button("Mark as False (no rings)", type="primary" ):
-                    human_label.save_response(ss.tsv_data, ss.row, ss.tsv_file, "False")
-                    marked_as.write("Marked as False")
-                    ss.need_new_image = True
-
-        st.write("---  ")
+    st.write(f"Images in queue: {len(ss.images) if ss.images is not None else 0}")
+    if len (ss.images) > 100:
+        st.warning("More than 100 images in the queue. Narrowing down the selection criteria.")
     else:
-        st.write("No unclassified images found in the queue.")
+        for img_path, row, idx in zip(ss.images, ss.rows, ss.idxs):
+            ss.image = img_path
+            ss.row = row
+            ss.idx = idx
+            if ss.image is not None:
+                st.write("---  ")
+                image_cols = st.columns([2, 2, 2])
+                with image_cols[0]:
+                    true_container = st.empty()
+                    marked_as = st.empty()
+                with image_cols[1]:
+                    false_container = st.empty()
+                with image_cols[0]:
+                    st.image(str(ss.image), caption=ss.image.name)
+                with image_cols[2]:
+                    st.caption(f"Index: {ss.row.name}")
+                count = 1
+
+                for key,val in ss.row.items():
+                    count += 1
+                    with image_cols[count%2+1]:
+                        st.caption(f"{key}: {val}")
+                with true_container:
+                        if st.button("Mark as True (has rings)", type="primary", key=f"true_{ss.idx}"):
+                            human_label.save_response(ss.tsv_data, ss.row, ss.tsv_file, "True")
+                            marked_as.write("Marked as True")
+                            ss.need_new_image = True
+
+                with false_container:
+                        if st.button("Mark as False (no rings)", type="primary", key=f"false_{ss.idx}"):
+                            human_label.save_response(ss.tsv_data, ss.row, ss.tsv_file, "False")
+                            marked_as.write("Marked as False")
+                            ss.need_new_image = True
+
+                st.write("---  ")
+
 with tab_review_stats:
     stats = report_stats.get_stats(ss.tsv_data)
     st.code(stats)
