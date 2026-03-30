@@ -24,7 +24,7 @@ To do:
   
 [ ] - PCA — what drives variance?  
 [ ] - UMAP — do ring-positive bonds cluster?  
-[ ] - Simple interpretable ML on feature table (random forest / logistic regression)  
+[ ] - Simple interpretable ML on feature table (random forest / logistic regression) with sklearn
 [ ] - Continue manual labeling to grow has_rings ground truth  
 
 
