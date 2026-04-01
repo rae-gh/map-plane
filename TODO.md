@@ -1,6 +1,6 @@
-
-
-
+01/01/2026
+[ ] - Get dssp working
+[ ] - finish restructure without image classifier
 
 30/03/2026 End of week summary
 Done:

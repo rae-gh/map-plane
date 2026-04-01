@@ -249,6 +249,16 @@ class GeometryMaker:
         vdf = pd.concat(dfs, axis=0)
         return vdf
 
+    def calculateDssp(self,log=0):
+        """Creates the geoemtry from the structures in the class"""
+
+        dfs = []
+        for geopdb in self.pobjs:
+            df = geopdb.dsspDataFrame()
+            dfs.append(df)
+        vdf = pd.concat(dfs, axis=0)
+        return vdf
+
     def filterDataFrame(self,data, inclusions={},exclusions={}):
         df = data
         for ky,vls in inclusions.items():

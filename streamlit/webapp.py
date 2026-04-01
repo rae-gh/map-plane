@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit import session_state as ss
-import peptide.c0_human_label_images_streamlit as human_label
-import peptide.c2_report_stats as report_stats
+import pipeline.peptide.c0_human_label_images_streamlit as human_label
+import pipeline.peptide.c2_report_stats as report_stats
 import peptide.c1_machine_train as machine_train
 
 import pandas as pd

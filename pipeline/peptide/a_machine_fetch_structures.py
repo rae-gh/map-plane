@@ -20,7 +20,7 @@ query = (
 results = list(query())
 
 # Save results
-with open("ml/data/query/pdb_query_results.tsv", "w") as f:
+with open("data/query_results/pdb_query_results.tsv", "w") as f:
     f.write("pdb_code\tresolution\n")
 
 mman.MapsManager().set_dir(MPDATA_DIR)
@@ -44,7 +44,7 @@ for pdb_code in results:
                         if "resolution_high" in val["author_provided"]:
                             resolution = val["author_provided"]["resolution_high"]
                             print(f"  Resolution: {resolution}")
-            with open("ml/data/query/pdb_query_results.tsv", "a") as f:
+            with open("data/query_results/pdb_query_results.tsv", "a") as f:
                 f.write(f"{pdb_code}\t{resolution}\n")
     except Exception as e:
         print(f"Error processing {pdb_code}: {e}")
@@ -58,7 +58,7 @@ metadata = {
     "package": "rcsbapi"
 }
 
-with open("ml/data/query/query_metadata.json", "w") as f:
+with open("data/query_results/query_metadata.json", "w") as f:
     json.dump(metadata, f, indent=2)
 
 print(f"Found {len(results)} structures")

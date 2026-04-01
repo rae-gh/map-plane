@@ -216,7 +216,24 @@ class PdbObject(object):
                         a+="\n......"+desc
         return a
     ##################################################################################
+
     def dataFrame(self):
+        dicdfs = []
+        for chain,resdic in self.chains.items():
+            for no,res in resdic.items():
+                for attype,atm in res.atoms.items():
+                    dic={'pdbCode':self.pdb_code,'resolution':self.resolution,
+                    'chain':atm.chain,'aa':res.amino_acid,'rid':res.rid,'ridx':res.ridx,
+                    'atom':atm.atom_name, 'atomNo':atm.atom_no,'element':atm.atom_type,
+                    'bfactor':atm.bfactor, 'occupancy':atm.occupancy,
+                    'x':atm.x, 'y':atm.y, 'z':atm.z}
+                    dicdfs.append(dic)
+        return pd.DataFrame.from_dict(dicdfs)
+
+    def dsspDataFrame(self):
+        from Bio.PDB.DSSP import DSSP
+        model = self.bio_struc[0]
+        dssp = DSSP(model, pdb_path, dssp="mkdssp")  # specify binary name
         dicdfs = []
         for chain,resdic in self.chains.items():
             for no,res in resdic.items():

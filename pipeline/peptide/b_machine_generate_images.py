@@ -5,6 +5,9 @@ import map_plane.dmap.mapsmanager as mman
 import map_plane.dmap.mapfunctions as mfun
 import map_plane.dmap.mapplothelp as mph
 from map_plane import MPDATA_DIR
+
+from map_plane.geom.pdbgeometry import GeometryMaker as geom_maker
+
 import pandas as pd
 import uuid
 
@@ -42,7 +45,7 @@ print("Results directory set to: ", RESULTS_DIR)
 print("Classify mode: ", classify_mode)
 
 
-pbd_query_df = pd.read_csv(f"{SCRIPT_DIR}/data/query/pdb_query_results.tsv", delimiter="\t")
+pbd_query_df = pd.read_csv(f"data/query_results/pdb_query_results.tsv", delimiter="\t")
 pdb_codes = pbd_query_df["pdb_code"].tolist()
 print(f"Loaded {len(pdb_codes)} PDB codes from query results.")
 
@@ -64,6 +67,36 @@ for row in pbd_query_df.itertuples():
     ml = mman.MapsManager().get_or_create(pdb_code,file=1,header=1,values=1)
     mf = mfun.MapFunctions(pdb_code,ml.mobj,ml.pobj,interpolation)
     pobj = mf.pobj
+
+    geomm = geom_maker([pobj])
+
+    ls_geos = []
+    ls_geos.append("N:N+1")
+    ls_geos.append("C:N+1")
+    ls_geos.append("C:O")
+    ls_geos.append("N:CA:C:N+1")
+    ls_geos.append("C-1:N:CA:C")
+    ls_geos.append("N:CA:C:O")
+    ls_geos.append("CA-1:C-1:N:CA")
+    ls_geos.append("CA:C:N+1:CA+1")
+    ls_geos.append("N:CA:C")
+    ls_geos.append("CA:C:N+1")
+    ls_geos.append("C-1:CA:C")
+    ls_geos.append("N:O")
+    ls_geos.append("N:CA:O")
+    ls_geos.append("CA-1:CA:CA+1")
+    ls_geos.append("CA-1:CA")
+    ls_geos.append("CA:CA+1")
+
+
+
+    df_geos = geomm.calculateGeometry(ls_geos)
+    df_data = geomm.calculateData(hues=["aa","bfactor","occupancy"])
+
+    print(df_geos.head(10))
+    print(df_data.head(10))
+
+    continue
 
     a1,a2,a3 = pobj.get_first_three()
     print(f"First three keys: {a1}, {a2}, {a3}")
@@ -107,33 +140,5 @@ for row in pbd_query_df.itertuples():
         key2, a2 =pobj.get_next_key(key2)
         key3, a3 =pobj.get_next_key(key3)
 
-
-
-
-
-#         slice_vectors = []
-
-#             central_atom = central_atoms[i]
-#             linear_atom = linear_atoms[i]
-#             planar_atom = planar_atoms[i]
-#             # get the vectors
-#             cc = v3.VectorThree().from_coords(ml.pobj.get_coords_key(central_atom))
-#             ll = v3.VectorThree().from_coords(ml.pobj.get_coords_key(linear_atom))
-#             pp = v3.VectorThree().from_coords(ml.pobj.get_coords_key(planar_atom))
-#             slice_vectors.append((cc,ll,pp))
-
-#         filename = f"{RESULTS_DIR}/{resolution}_{pdb_code}_peptide_{residue}.png"
-#         for cc,ll,pp in slice_vectors:
-#             vals2d = mf.get_slice(cc,ll,pp,width,samples,interpolation,deriv=0,ret_type="2d")
-#             mplot = mph.MapPlotHelp(filename)
-#             mplot.make_plot_slice_2d(vals2d,
-#                                     min_percent=1,
-#                                     max_percent=0.15,
-#                                     samples=samples,
-#                                     width=width,
-#                                     #points=[cc,ll,pp],
-#                                     title=f"{pdb_code}-{resolution}-{residue}-{aa}",
-#                                     plot_type="heatmap",
-#                                     hue="WB")
 
 
