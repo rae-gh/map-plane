@@ -33,7 +33,6 @@ class GeometryMaker:
         #:param geos: A list of geometric measures to calculate in the format 2,3 or 4 atoms for distance, angle or dihedral, e.g. 'N:CA', 'N:CA:C', or 'N:CA:C:N+1'
         #:param hues:A list of hues hat will associate with the geoemtric values, can be bfactor, amino acid (aa), residue number (rid) etc see docs
         #:returns: the pandas dataframe with a r per geoemtric calculation per residue wh columns of geoemtric measures and hues
-        geo2 = ["val","blob"]
         vals = []
         hues=['pdb_code','resolution','aa','chain','rid','dssp']#,'rid2','rid3','rid4']
         for geopdb in self.pobjs:
@@ -42,13 +41,15 @@ class GeometryMaker:
             if log > 0:
                 print('leuci-geo(1) df calc for ' + hue_pdb, count, '/', len(self.pobjs))
                 count += 1
-
             hue_res = geopdb.resolution
             ridx = 1
             for chain, res in geopdb.chains.items():
                 for rid, resd in res.items():
                     hue_aa = resd.amino_acid
-                    hue_dssp = df_dssp[df_dssp['rid'] == rid]['dssp'].values[0] if rid in df_dssp['rid'].values else "-"
+                    if df_dssp.empty:
+                        hue_dssp = "-"
+                    else:
+                        hue_dssp = df_dssp[df_dssp['rid'] == rid]['dssp'].values[0] if rid in df_dssp['rid'].values else "-"
                     geo_cols = {}
                     geo_col = -1
                     for geo in geos:
@@ -208,7 +209,8 @@ class GeometryMaker:
             geos2.append("rid4_" + geo)
 
         df = pd.DataFrame(vals,columns=geos2)
-        print(geos2)
+        # reorder the columns so the hues come first
+        df = df[[col for col in geos2 if col in hues] + [col for col in geos2 if col not in hues]]
         return df
 
     def geoToAtoms(self, geo):
