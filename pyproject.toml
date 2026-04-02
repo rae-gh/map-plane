@@ -24,6 +24,16 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest", "ruff"]
 dev = ["pytest", "ruff", "ipykernel", "jupyter", "pre-commit"]
+ml = ["torch", "torchvision", "rcsb-api", "Pillow", scikit-learn", "streamlit", "timm==0.9.16", "huggingface_hub"]
+analysis = [
+    "scikit-learn",
+    "streamlit",
+    "umap-learn",
+    "hdbscan",
+    "biopython==1.81",
+    "pydssp",
+    "rcsb-api",
+]
 
 [tool.hatchling.build.targets.wheel]
 packages = ["src/map_plane"]

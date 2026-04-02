@@ -133,7 +133,8 @@ class MapPlotHelp(object):
                            levels=20,
                            title="Map-Plane Plot 2d",
                            samples=-1,width=-1,
-                           transparency="no"):
+                           transparency="no",
+                           plotwidth=2079):
         #https://plotly.com/python/3d-isosurface-plots/
         vals = vals2d.tolist()
         fig = make_subplots(rows=1, cols=1,horizontal_spacing=0.05,vertical_spacing=0.05)
@@ -217,7 +218,7 @@ class MapPlotHelp(object):
         elif ".html" in self.filename:
             fig.write_html(self.filename,config=PUBLICATION_CONFIG)
         else:
-            fig.write_image(self.filename,width=2079, height=2079)
+            fig.write_image(self.filename,width=plotwidth, height=plotwidth)
 
     def add_points(self, points,samples,width,log_level=0):
         # First create the dots for the potitions as a scatter plot

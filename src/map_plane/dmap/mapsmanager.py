@@ -12,12 +12,13 @@
 import threading #https://stackoverflow.com/questions/2905965/creating-threads-in-python
 
 from . import maploader as moad
+from map_plane import MPDATA_DIR
 
 class MapsManager:
     _instance = None
     _lock = threading.Lock()
     strge_container = {}
-    DATADIR = ""
+    DATADIR = MPDATA_DIR
     CACHE = -1
 
     def __new__(cls):

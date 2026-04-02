@@ -21,7 +21,6 @@ def test_basic_functionality():
     samples = 50
     depth_samples = 10
     # find relative path for data
-    mman.MapsManager().set_dir(MPDATA_DIR)
     print("Data directory set to: ", MPDATA_DIR)
     # downloand/upload into memory the pdb and ccp4 data (0 means skip if not there, 1 means in this thread, 2 means in another thread and don't wait)
     ml = mman.MapsManager().get_or_create(pdb_code,file=1,header=1,values=1)
@@ -40,7 +39,7 @@ def test_basic_functionality():
         # CELL 4
     # 2d plot (s)
 
-    filename = "SHOW"
+    filename = "tests/tmp/test_output.png"
     for cc,ll,pp in slice_vectors:
         vals2d = mf.get_slice(cc,ll,pp,width,samples,interpolation,deriv=0,ret_type="2d")
         mplot = mph.MapPlotHelp(filename)

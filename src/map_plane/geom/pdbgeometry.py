@@ -9,6 +9,7 @@ This class manipulates given biopython structures and creates dataframes oft he 
 def ret_get():
     return "leucippy"
 
+from map_plane import MPDATA_DIR
 from operator import itemgetter
 import pandas as pd
 from . import geocalculator as calc
@@ -32,13 +33,12 @@ class GeometryMaker:
         #:param geos: A list of geometric measures to calculate in the format 2,3 or 4 atoms for distance, angle or dihedral, e.g. 'N:CA', 'N:CA:C', or 'N:CA:C:N+1'
         #:param hues:A list of hues hat will associate with the geoemtric values, can be bfactor, amino acid (aa), residue number (rid) etc see docs
         #:returns: the pandas dataframe with a r per geoemtric calculation per residue wh columns of geoemtric measures and hues
-
-        print("HERE")
         geo2 = ["val","blob"]
         vals = []
-        hues=['pdb_code','resolution','aa','chain','rid']#,'rid2','rid3','rid4']
+        hues=['pdb_code','resolution','aa','chain','rid','dssp']#,'rid2','rid3','rid4']
         for geopdb in self.pobjs:
             hue_pdb = geopdb.pdb_code
+            df_dssp = geopdb.dsspDataFrame()
             if log > 0:
                 print('leuci-geo(1) df calc for ' + hue_pdb, count, '/', len(self.pobjs))
                 count += 1
@@ -48,6 +48,7 @@ class GeometryMaker:
             for chain, res in geopdb.chains.items():
                 for rid, resd in res.items():
                     hue_aa = resd.amino_acid
+                    hue_dssp = df_dssp[df_dssp['rid'] == rid]['dssp'].values[0] if rid in df_dssp['rid'].values else "-"
                     geo_cols = {}
                     geo_col = -1
                     for geo in geos:
@@ -78,6 +79,7 @@ class GeometryMaker:
                         all_hues['pdb_code'] = hue_pdb
                         all_hues['resolution'] =hue_res
                         all_hues['aa'] =hue_aa
+                        all_hues['dssp'] =hue_dssp
                         all_hues['chain'] =chain
                         all_hues['rid'] = rid
                         #all_hues['rid2'] = rid2
@@ -245,6 +247,16 @@ class GeometryMaker:
         dfs = []
         for geopdb in self.pobjs:
             df = geopdb.dataFrame()
+            dfs.append(df)
+        vdf = pd.concat(dfs, axis=0)
+        return vdf
+
+    def calculateDssp(self,log=0):
+        """Creates the geoemtry from the structures in the class"""
+
+        dfs = []
+        for geopdb in self.pobjs:
+            df = geopdb.dsspDataFrame()
             dfs.append(df)
         vdf = pd.concat(dfs, axis=0)
         return vdf

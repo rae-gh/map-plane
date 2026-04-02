@@ -15,7 +15,12 @@ conda activate phd
 pip install -e ".[dev]"   # installs test packages and jupyter extensions
 pre-commit install
 
+# ML training
+pip install -e ".[ml]"
+
 # other
 pip install -e ".[test]"  # installs package plus pytest
 pip install -e "."        # installs package only
+
+
 ```
