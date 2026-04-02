@@ -52,6 +52,7 @@ ls_geos.append("C:O")
 ls_geos.append("N:O")
 ls_geos.append("CA:CA+1")
 ls_geos.append("CA-1:CA")
+ls_geos.append("O-1:N")
 
 ls_geos.append("N:CA:C:N+1")
 ls_geos.append("C-1:N:CA:C")
@@ -64,6 +65,7 @@ ls_geos.append("CA:C:N+1")
 ls_geos.append("C-1:N:CA")
 ls_geos.append("N:CA:O")
 ls_geos.append("CA-1:CA:CA+1")
+ls_geos.append("N-1:O-1:N")
 
 ls_extra = []
 ls_extra.append("dssp")
@@ -94,7 +96,7 @@ for row in pbd_query_df.itertuples():
     geomm = geom_maker([pobj])
 
     df_geos = geomm.calculateGeometry(ls_geos)
-    df_geos.to_csv(f"{DATA_DIR}/geometry_{pdb_code}.tsv", sep="\t", index=False)
+    #df_geos.to_csv(f"{DATA_DIR}/geometry_{pdb_code}.tsv", sep="\t", index=False)
     # this returns a dataframe with columns for each geometry and also columns for
     # residue level: aa, dssp
     # averaged atom level: bfactor, occupancy

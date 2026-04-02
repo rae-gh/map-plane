@@ -28,7 +28,7 @@ NUMERIC_FEATURES = [
     "resolution",
     "bf_N:CA:C", "bf_C:O",
     "N:N+1", "C:N+1", "C:O", "N:O", "CA:CA+1", "CA-1:CA",
-    "N:CA:C:N+1", "C-1:N:CA:C", "N:CA:C:O",
+    "N:CA:C:N+1", "C-1:N:CA:C", "N:CA:C:O", "O-1:N", "N-1:O-1:N"
     "CA-1:C-1:N:CA", "CA:C:N+1:CA+1",
     "N:CA:C", "CA:C:N+1", "C-1:N:CA", "N:CA:O", "CA-1:CA:CA+1",
 ]
