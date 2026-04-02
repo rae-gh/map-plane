@@ -5,12 +5,13 @@ https://pynative.com/make-python-class-json-serializable/#:~:text=Use%20toJSON()
 """
 
 from map_plane.vxyz import vectorthree as v3
+from map_plane import MPDATA_DIR
 import pandas as pd
 import json
 
 amino_acids = ["ala","arg","asn","asp","cys","gln","glu","gly","his","ile","leu","lys","met","phe","pro","ser","thr","trp","tyr","val"]
 class PdbObject(object):
-    def __init__(self, pdb_code):
+    def __init__(self, pdb_code, pdb_path=""):
         # PUBLIC INTERFACE
         self.pdb_code = pdb_code
         self.resolution = -1
@@ -18,6 +19,10 @@ class PdbObject(object):
         self.chains = {}
         self.exc_hetatm = False
         self.lines = []
+        if pdb_path == "":
+            self.pdb_path = f"{MPDATA_DIR}/{pdb_code}.pdb"
+        else:
+            self.pdb_path = pdb_path
 
     def __str__(self):
         return f"{self.pdb_code}\t{self.resolution}\t{self.exp_method}"
@@ -233,18 +238,19 @@ class PdbObject(object):
     def dsspDataFrame(self):
         from Bio.PDB.DSSP import DSSP
         model = self.bio_struc[0]
-        dssp = DSSP(model, pdb_path, dssp="mkdssp")  # specify binary name
-        dicdfs = []
-        for chain,resdic in self.chains.items():
-            for no,res in resdic.items():
-                for attype,atm in res.atoms.items():
-                    dic={'pdbCode':self.pdb_code,'resolution':self.resolution,
-                    'chain':atm.chain,'aa':res.amino_acid,'rid':res.rid,'ridx':res.ridx,
-                    'atom':atm.atom_name, 'atomNo':atm.atom_no,'element':atm.atom_type,
-                    'bfactor':atm.bfactor, 'occupancy':atm.occupancy,
-                    'x':atm.x, 'y':atm.y, 'z':atm.z}
-                    dicdfs.append(dic)
-        return pd.DataFrame.from_dict(dicdfs)
+        dssp = DSSP(model, self.pdb_path, dssp="mkdssp")  # specify binary name
+        print(dssp)
+        dicdssp = []
+        chn = ""
+        res = ""
+        for chain in dssp.keys():
+            chn = chain[0]
+            res = chain[1][1]
+            dsp = dssp[chain][2]
+            dic = {'pdbCode':self.pdb_code,'chain':chn,'rid':res,'dssp':dsp}
+            dicdssp.append(dic)
+        return pd.DataFrame.from_dict(dicdssp)
+
 
     # if we add lines from a cif file I will do something different
     def add_line_string(self,aid, rid, aa, am, ch, ver, x, y, z, occ, bf, ele):

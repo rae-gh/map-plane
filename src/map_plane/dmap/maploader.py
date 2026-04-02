@@ -51,14 +51,14 @@ class MapLoader(object):
         self._directory = directory
         self._cif=cif
         if cif:
-            self._filepath = f"{directory}{pdb_code}.cif"
+            self._filepath = f"{directory}/{pdb_code}.cif"
             self.mobj.pdb_link = f"https://www.ebi.ac.uk/pdbe/entry-files/download/{pdb_code}.cif"
         else:
-            self._filepath = f"{directory}{pdb_code}.pdb"
+            self._filepath = f"{directory}/{pdb_code}.pdb"
             self.mobj.pdb_link = f"https://www.ebi.ac.uk/pdbe/entry-files/download/pdb{pdb_code}.ent"
 
-        self._filepath_ccp4 = f"{self._directory}{self.mobj.pdb_code}.ccp4"
-        self._filepath_diff = f"{self._directory}{self.mobj.pdb_code}_diff.ccp4"
+        self._filepath_ccp4 = f"{self._directory}/{self.mobj.pdb_code}.ccp4"
+        self._filepath_diff = f"{self._directory}/{self.mobj.pdb_code}_diff.ccp4"
 
     def exists(self):
         if self.exists_pdb():
