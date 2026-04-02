@@ -9,13 +9,16 @@ def test_basic_functionality():
     pass
 
 def test_1ejg():
-    po = pl.PdbLoader("1ejg",MPDATA_DIR,cif=False,source="ebi").load_pdb()
+    pdb_code = "1ejg"
+    #pdb_code = "1d8g"
+    po = pl.PdbLoader(pdb_code,MPDATA_DIR,cif=False,source="ebi").load_pdb()
     geomm = pg.GeometryMaker([po])
     df_geos = geomm.calculateGeometry(["N:N+1", "C:N+1", "C:O"])
     df_info = geomm.calculateData(hues=["aa","bfactor","occupancy"])
     df_dssp = geomm.calculateDssp()
     print("Test 1ejg geometry")
     print(df_geos.head())
+    print(df_geos.columns)
     print("Test 1ejg data")
     print(df_info.head())
     print("Test 1ejg dssp")

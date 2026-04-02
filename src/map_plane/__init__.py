@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 
 __version__ = "0.1.0"
-__git_sha__ = "4583a2e"  # updated automatically by pre-commit hook
-__git_datetime__ = "02-04-2026 12:28"  # updated automatically by pre-commit hook
+__git_sha__ = "0c0af2f"  # updated automatically by pre-commit hook
+__git_datetime__ = "02-04-2026 23:32"  # updated automatically by pre-commit hook
 
 def version():
     return f"{__version__}+{__git_sha__} ({__git_datetime__})"
