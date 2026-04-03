@@ -19,17 +19,20 @@ import os
 width = 6
 samples = 100
 interpolation = "bspline"
-classify_mode = True
+classify_mode = False
 count_max = 10000000000  # Set a maximum number of iterations
+skip_mode = True
 #############################################
 RESULTS_DIR = "results"
 DATA_DIR = "data"
 IMAGE_DIR = Path(f"{DATA_DIR}/images/peptide_bonds")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(IMAGE_DIR, exist_ok=True)
-# empty dir first
-for f in IMAGE_DIR.glob("*"):
-    f.unlink()
+
+if not skip_mode:
+    # empty dir first
+    for f in IMAGE_DIR.glob("*"):
+        f.unlink()
 
 print("Data directory set to: ", MPDATA_DIR)
 print("Image directory set to: ", IMAGE_DIR)
@@ -117,10 +120,34 @@ for row in pbd_query_df.itertuples():
         chn = a1["chain"]
         rid = int(a1["rid"])
         aa = a1["aa"]
-        image_name = f"{pdb_code}_{resolution}_{rid}_{aa}.png"
-        if classify_mode:
-            image_name = f"{uuid.uuid4().hex}.png"
-        print(f"Image name: {image_name}")
+        image_name = f"{pdb_code}_{chn}_{rid}_{aa}.png"
+        # check if image already exists
+        exists_image = Path(f"{IMAGE_DIR}/{image_name}").exists()
+        if skip_mode and exists_image:
+            print(f"Already exists: {image_name}")
+        else:
+
+            if classify_mode:
+                image_name = f"{uuid.uuid4().hex}.png"
+            print(f"Image name: {image_name}")
+
+            cc = v3.VectorThree().from_coords(pobj.get_coords_key(key2))
+            ll = v3.VectorThree().from_coords(pobj.get_coords_key(key1))
+            pp = v3.VectorThree().from_coords(pobj.get_coords_key(key3))
+
+            vals2d = mf.get_slice(cc,ll,pp,width,samples,interpolation,deriv=0,ret_type="2d")
+            mplot = mph.MapPlotHelp(f"{IMAGE_DIR}/{image_name}")
+            mplot.make_plot_slice_2d(vals2d,
+                                        min_percent=1,
+                                        max_percent=0.15,
+                                        samples=samples,
+                                        width=width,
+                                        title="",
+                                        plot_type="heatmap",
+                                        hue="WB",
+                                        plotwidth=1000)
+
+        ##########################################
         with open(out_tsv, "a") as out_f:
             out_f.write(f"{pdb_code}\t{resolution}\t{rid}\t{a1['chain']}\t{aa}\t{image_name}")
             for geocol in ls_extra + ls_geos:
@@ -131,27 +158,6 @@ for row in pbd_query_df.itertuples():
                 out_f.write(f"\t{str(geoval)}")
             out_f.write("\n")
             out_f.flush()
-
-
-        cc = v3.VectorThree().from_coords(pobj.get_coords_key(key2))
-        ll = v3.VectorThree().from_coords(pobj.get_coords_key(key1))
-        pp = v3.VectorThree().from_coords(pobj.get_coords_key(key3))
-
-        vals2d = mf.get_slice(cc,ll,pp,width,samples,interpolation,deriv=0,ret_type="2d")
-        mplot = mph.MapPlotHelp(f"{IMAGE_DIR}/{image_name}")
-        mplot.make_plot_slice_2d(vals2d,
-                                    min_percent=1,
-                                    max_percent=0.15,
-                                    samples=samples,
-                                    width=width,
-                                    title="",
-                                    plot_type="heatmap",
-                                    hue="WB",
-                                    plotwidth=1000)
-
-
-
-
         ##########################################
         key1, a1 =pobj.get_next_key(key1)
         key2, a2 =pobj.get_next_key(key2)

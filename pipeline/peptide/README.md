@@ -3,6 +3,9 @@
 
 python -m streamlit run ml/pipeline/webapp.py
 
+# stdout and stderr to console and file
+python pipeline/b_machine_generate_features.py 2>&1 | tee logs/b_machine_generate_features.log
+
 ## Purpose
 
 A binary image classifier to identify peptide bond planes exhibiting

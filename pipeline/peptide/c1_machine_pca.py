@@ -23,6 +23,7 @@ from pathlib import Path
 TSV_PATH    = Path("data/peptide_bonds_data.tsv")
 RESULTS_DIR = Path("results/pca")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+from config import MPDATA_DIR
 
 NUMERIC_FEATURES = [
     "resolution",
