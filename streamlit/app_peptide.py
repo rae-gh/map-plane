@@ -8,6 +8,7 @@ from pathlib import Path
 from pipeline.peptide.config import GEOM_PARAMS
 from pipeline.peptide.config import ADD_PARAMS
 from pipeline.peptide.config import DSSP_MAP
+from pipeline.peptide import c0_machine_correlation as corr_module
 
 
 
@@ -244,6 +245,20 @@ with tabGeom:
         st.plotly_chart(fig, width=700, height=700)
 
 
+
+with tabCorr:
+    cont = st.empty()
+    lines = []
+    def on_progress(msg):
+        lines.append(msg)
+        cont.code("\n".join(lines))
+    corr, fig1, fig2 = corr_module.main(on_progress=on_progress)
+    #st.dataframe(corr)
+    cols = st.columns(2)
+    with cols[0]:
+        st.plotly_chart(fig1, width=700, height=700)
+    with cols[1]:
+        st.plotly_chart(fig2, width=700, height=700)
 
 with tabPCA:
     st.write("PCA features coming soon...")

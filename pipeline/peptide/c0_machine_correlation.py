@@ -44,7 +44,7 @@ def load_and_prepare(tsv_path):
     return df_clean[feature_cols]
 
 
-def plot_heatmap(corr, save_path, title):
+def plot_heatmap(corr, title):
     fig = px.imshow(
         corr,
         color_continuous_scale="RdBu_r",
@@ -58,13 +58,11 @@ def plot_heatmap(corr, save_path, title):
         width=900, height=800,
         coloraxis_colorbar=dict(title="r")
     )
-    fig.write_html(save_path.with_suffix(".html"))
-    fig.write_image(save_path)
-    print(f"  Saved → {save_path.with_suffix('.html')}")
-    print(f"  Saved → {save_path}")
+
+    return fig
 
 
-def plot_clustered_heatmap(corr, save_path):
+def plot_clustered_heatmap(corr):
     # Cluster features by correlation similarity
     dist = 1 - corr.abs()
     np.fill_diagonal(dist.values, 0)
@@ -86,16 +84,13 @@ def plot_clustered_heatmap(corr, save_path):
         width=900, height=800,
         coloraxis_colorbar=dict(title="r")
     )
-    fig.write_html(save_path.with_suffix(".html"))
-    fig.write_image(save_path)
-    print(f"  Saved → {save_path.with_suffix('.html')}")
-    print(f"  Saved → {save_path}")
 
+    return fig
 
-def report_high_correlations(corr, threshold):
-    print(f"\n{'='*60}")
-    print(f"  HIGH CORRELATIONS (|r| > {threshold})")
-    print(f"{'='*60}")
+def report_high_correlations(corr, threshold, on_progress):
+    on_progress(f"\n{'='*60}")
+    on_progress(f"  HIGH CORRELATIONS (|r| > {threshold})")
+    on_progress(f"{'='*60}")
 
     pairs = []
     cols = corr.columns.tolist()
@@ -106,41 +101,55 @@ def report_high_correlations(corr, threshold):
                 pairs.append((cols[i], cols[j], r))
 
     if not pairs:
-        print(f"  None found above threshold {threshold}")
+        on_progress(f"  None found above threshold {threshold}")
     else:
         pairs.sort(key=lambda x: abs(x[2]), reverse=True)
-        print(f"  {'Feature A':<25}  {'Feature B':<25}  {'r':>6}")
-        print(f"  {'-'*60}")
+        on_progress(f"  {'Feature A':<25}  {'Feature B':<25}  {'r':>6}")
+        on_progress(f"  {'-'*60}")
         for a, b, r in pairs:
-            print(f"  {a:<25}  {b:<25}  {r:>6.3f}")
+            on_progress(f"  {a:<25}  {b:<25}  {r:>6.3f}")
 
-    print(f"{'='*60}\n")
+    on_progress(f"{'='*60}\n")
     return pairs
 
 
-def main():
+def main(on_progress):
     print(f"\nLoading data...")
     X = load_and_prepare(TSV_PATH)
 
     print(f"\nComputing correlation matrix ({len(X.columns)} features)...")
     corr = X.corr()
 
-    corr.to_csv(RESULTS_DIR / "correlation_matrix.csv")
-    print(f"  Saved → {RESULTS_DIR / 'correlation_matrix.csv'}")
-
     print(f"\nGenerating plots...")
-    plot_heatmap(
+    fig1 = plot_heatmap(
         corr,
-        RESULTS_DIR / "correlation_heatmap.png",
         title="Correlation Matrix"
     )
-    plot_clustered_heatmap(
+    fig2 = plot_clustered_heatmap(
         corr,
-        RESULTS_DIR / "correlation_clustered.png"
     )
 
-    report_high_correlations(corr, HIGH_CORR_THRESHOLD)
+    report_high_correlations(corr, HIGH_CORR_THRESHOLD, on_progress)
+
+    return corr, fig1, fig2
 
 
 if __name__ == "__main__":
-    main()
+    def on_progress(message):
+        print(message)
+    corr, fig1, fig2 = main(on_progress)
+
+    corr.to_csv(RESULTS_DIR / "correlation_matrix.csv")
+    on_progress(f"  Saved → {RESULTS_DIR / 'correlation_matrix.csv'}")
+
+    save_path1 = RESULTS_DIR / "correlation_heatmap.png"
+    fig1.write_html(save_path1.with_suffix(".html"))
+    fig1.write_image(save_path1)
+    on_progress(f"  Saved → {save_path1.with_suffix('.html')}")
+    on_progress(f"  Saved → {save_path1}")
+
+    save_path2 = RESULTS_DIR / "correlation_clustered.png"
+    fig2.write_html(save_path2.with_suffix(".html"))
+    fig2.write_image(save_path2)
+    on_progress(f"  Saved → {save_path2.with_suffix('.html')}")
+    on_progress(f"  Saved → {save_path2}")

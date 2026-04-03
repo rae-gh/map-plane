@@ -104,6 +104,7 @@ def plot_variance_explained(pca, save_path):
     plt.savefig(save_path, dpi=150)
     plt.close()
     print(f"  Saved → {save_path}")
+    
 
 
 def plot_loadings(pca, feature_cols, n_components=4, save_path=None):
