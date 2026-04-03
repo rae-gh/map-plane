@@ -40,12 +40,12 @@ DIHEDRAL_FEATURES = [
 ]
 
 # UMAP parameters
-N_NEIGHBORS  = 15
-MIN_DIST     = 0.1
+xN_NEIGHBORS  = 15
+xMIN_DIST     = 0.1
 RANDOM_SEED  = 42
 
 # HDBSCAN parameters
-MIN_CLUSTER_SIZE = 50   # minimum points to form a cluster
+xMIN_CLUSTER_SIZE = 50   # minimum points to form a cluster
 
 # Colour by these structural properties
 COLOUR_BY = ["resolution", "aa", "dssp", "bf_N:CA:C", "C:N+1"]
@@ -94,11 +94,11 @@ def scale(df, feature_cols):
 
 
 # ── 3. UMAP ────────────────────────────────────────────────────────────────────
-def run_umap(X_scaled):
-    print(f"\nRunning UMAP (n_neighbors={N_NEIGHBORS}, min_dist={MIN_DIST})...")
+def run_umap(X_scaled, n_neighbours, min_dist):
+    print(f"\nRunning UMAP (n_neighbors={n_neighbours}, min_dist={min_dist})...")
     reducer = umap.UMAP(
-        n_neighbors=N_NEIGHBORS,
-        min_dist=MIN_DIST,
+        n_neighbors=n_neighbours,
+        min_dist=min_dist,
         n_components=2,
         random_state=RANDOM_SEED
     )
@@ -108,9 +108,9 @@ def run_umap(X_scaled):
 
 
 # ── 4. HDBSCAN ─────────────────────────────────────────────────────────────────
-def run_hdbscan(embedding):
-    print(f"\nRunning HDBSCAN (min_cluster_size={MIN_CLUSTER_SIZE})...")
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=MIN_CLUSTER_SIZE)
+def run_hdbscan(embedding, min_cluster_size):
+    print(f"\nRunning HDBSCAN (min_cluster_size={min_cluster_size})...")
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size)
     labels = clusterer.fit_predict(embedding)
     counts = pd.Series(labels).value_counts().sort_index()
     for label, count in counts.items():
@@ -205,9 +205,11 @@ def cluster_report(df):
     fig.update_traces(marker=dict(size=3))
     fig.write_html(RESULTS_DIR / "ramachandran_clusters.html")
 
+    return fig
+
 
 # ── Main ───────────────────────────────────────────────────────────────────────
-def main():
+def main(n_neighbours, min_dist, min_cluster_size):
     # 1. Load
     df, feature_cols = load_and_prepare(TSV_PATH)
 
@@ -215,19 +217,19 @@ def main():
     X_scaled = scale(df, feature_cols)
 
     # 3. UMAP
-    embedding = run_umap(X_scaled)
+    embedding = run_umap(X_scaled, n_neighbours, min_dist)
     df["umap_x"] = embedding[:, 0]
     df["umap_y"] = embedding[:, 1]
 
     # 4. HDBSCAN
-    df["cluster"] = run_hdbscan(embedding)
+    df["cluster"] = run_hdbscan(embedding, min_cluster_size)
 
     # 5. Plot
     print(f"\nGenerating plots...")
     fig = plot_umap(df, RESULTS_DIR)
 
     # 6. Report
-    cluster_report(df)
+    fig2 = cluster_report(df)
 
     # 7. Save
     save_cols = ["pdb_code", "rid", "aa", "dssp", "resolution",
@@ -235,8 +237,8 @@ def main():
     df[save_cols].to_csv(RESULTS_DIR / "umap_coordinates.csv", index=False)
     print(f"Coordinates saved → {RESULTS_DIR / 'umap_coordinates.csv'}")
 
-    return fig, df
+    return fig, df, fig2
 
 
 if __name__ == "__main__":
-    main()
+    main(xN_NEIGHBORS, xMIN_DIST, xMIN_CLUSTER_SIZE)

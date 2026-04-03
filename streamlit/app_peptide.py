@@ -36,7 +36,7 @@ all_tabs.append("Umap")
 
 with tabAll:
 
-    df_all_features = pd.read_csv("data/peptide_bonds_data.tsv", sep="\t", dtype=str)
+    df_all_features = pd.read_csv("data/peptide_bonds_data_with_clusters.tsv", sep="\t", dtype=str)
     # specify coluim types to avoid warnings
     numeric_cols = GEOM_PARAMS + ["resolution", "bf_N:CA:C", "bf_C:O", "O-1:N", "count"]
     for col in numeric_cols:
@@ -281,11 +281,37 @@ with tabPCA:
         st.pyplot(fig3, width="content")
 
 with tabUmap:
-    st.write("UMAP analysis is coming soon...")
-    with st.spinner("Running UMAP analysis...", show_time=True):
-        fig, df = c2_machine_umap.main()
-    st.plotly_chart(fig, width=700, height=700)
-    st.dataframe(df)
+    st.write("The Ramachandran plot matcahes the umap clusters with settings: n_neighbors=15, min_dist=0.1, min_cluster_size=50")
+    ss.figu = ss.figu if "figu" in ss else None
+    ss.dfu = ss.dfu if "dfu" in ss else None
+    ss.figrama = ss.figrama if "figrama" in ss else None
+    cols = st.columns(3)
+    with cols[0]:
+        min_dist = st.slider("Minimum distance", 0.0, 1.0, 0.1)
+    with cols[1]:
+        n_neighbors = st.slider("Number of neighbors", 2, 100, 15)
+    with cols[2]:
+        min_cluster_size = st.slider("Minimum cluster size", 2, 100, 50)
+
+    if st.button("Run UMAP analysis"):
+        with st.spinner("Running UMAP analysis...", show_time=True):
+            ss.figu, ss.dfu, ss.figrama = c2_machine_umap.main(n_neighbors, min_dist, min_cluster_size)
+    if ss.figu is not None and ss.dfu is not None:
+        cols_umap = st.columns(2)
+        with cols_umap[0]:
+            st.plotly_chart(ss.figu, width=700, height=700, key="umap_plot")
+        with cols_umap[1]:
+            st.plotly_chart(ss.figrama, width=700, height=700, key="um")
+        st.dataframe(ss.dfu)
+
+        if st.button("Save clusters to main dataframe"):
+            df_all_features = pd.read_csv("data/peptide_bonds_data.tsv", sep="\t", dtype=str)
+            df_with_clusters = df_all_features.merge(ss.dfu[["pdb_code", "chain", "rid", "cluster"]], on=["pdb_code", "chain", "rid"], how="left")
+            df_with_clusters.to_csv("data/peptide_bonds_data_with_clusters.tsv", sep="\t", index=False)
+            st.success("Clusters saved to data/peptide_bonds_data_with_clusters.tsv")
+
+            csv = ss.dfu.to_csv(index=False)
+            st.download_button("Download CSV", data=csv, file_name="umap_coordinates.csv", mime="text/csv")
 
 
 st.write("---  ")
