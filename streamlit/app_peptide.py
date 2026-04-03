@@ -10,6 +10,7 @@ from pipeline.peptide.config import ADD_PARAMS
 from pipeline.peptide.config import DSSP_MAP
 from pipeline.peptide import c0_machine_correlation as corr_module
 from pipeline.peptide import c1_machine_pca as pca_module
+from pipeline.peptide import c2_machine_umap as c2_machine_umap
 
 
 
@@ -29,8 +30,9 @@ all_tabs.append("Group by")
 all_tabs.append("Geometry")
 all_tabs.append("Correlation")
 all_tabs.append("PCA")
+all_tabs.append("Umap")
 
-(tabAll, tabImages, tabGroup, tabGeom, tabCorr, tabPCA) = st.tabs(all_tabs)
+(tabAll, tabImages, tabGroup, tabGeom, tabCorr, tabPCA, tabUmap) = st.tabs(all_tabs)
 
 with tabAll:
 
@@ -277,6 +279,13 @@ with tabPCA:
     with st.expander("PCA scatter plot"):
         st.write("The third plot shows the data points projected onto the first two principal components, coloured by a selected structural property.")
         st.pyplot(fig3, width="content")
+
+with tabUmap:
+    st.write("UMAP analysis is coming soon...")
+    with st.spinner("Running UMAP analysis...", show_time=True):
+        fig, df = c2_machine_umap.main()
+    st.plotly_chart(fig, width=700, height=700)
+    st.dataframe(df)
 
 
 st.write("---  ")

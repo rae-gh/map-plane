@@ -166,6 +166,7 @@ def plot_umap(df, save_dir):
     fig.update_layout(width=900, height=800)
     fig.write_html(save_dir / "umap_clusters.html")
     print(f"  Saved → {save_dir / 'umap_clusters.html'}")
+    return fig
 
 
 # ── 6. Cluster report ──────────────────────────────────────────────────────────
@@ -223,7 +224,7 @@ def main():
 
     # 5. Plot
     print(f"\nGenerating plots...")
-    plot_umap(df, RESULTS_DIR)
+    fig = plot_umap(df, RESULTS_DIR)
 
     # 6. Report
     cluster_report(df)
@@ -233,6 +234,8 @@ def main():
                  "umap_x", "umap_y", "cluster"]
     df[save_cols].to_csv(RESULTS_DIR / "umap_coordinates.csv", index=False)
     print(f"Coordinates saved → {RESULTS_DIR / 'umap_coordinates.csv'}")
+
+    return fig, df
 
 
 if __name__ == "__main__":
