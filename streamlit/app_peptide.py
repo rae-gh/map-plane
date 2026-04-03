@@ -97,16 +97,17 @@ with tabGroup:
             st.dataframe(group_counts, width="stretch", hide_index=True)
 
 with tabGeom:
-    st.write("Geometry features...")
+    st.write("Geometry features on filtered subset...")
+    use_df_for_geom = filtered.copy()
     cols = st.columns(3)
     hue_cols = ["count"]
     for col in df_all_features.columns:
         hue_cols.append(col)
 
     with cols[0]:
-        x_axis = st.selectbox("X-axis", options=df_all_features.columns, index=10)
+        x_axis = st.selectbox("X-axis", options=use_df_for_geom.columns, index=10)
     with cols[1]:
-        y_axis = st.selectbox("Y-axis", options=df_all_features.columns, index=11)
+        y_axis = st.selectbox("Y-axis", options=use_df_for_geom.columns, index=11)
     with cols[2]:
         hue_axis = st.selectbox("Colour by", options=hue_cols, index=0)
 
@@ -114,83 +115,73 @@ with tabGeom:
     if x_axis == y_axis:
         st.warning("Please select different columns for x and y axes.")
     else:
+
+        # Modes are:
+        #1. All numerical
+        #2. All categorical
         # Pick color args based on hue type
         if hue_axis in numeric_cols:
             color_kwargs = {"color_continuous_scale": "Spectral"}
         else:
             color_kwargs = {"color_discrete_sequence": px.colors.qualitative.Vivid_r}
 
-        if hue_axis == "count" and (x_axis not in numeric_cols and y_axis not in numeric_cols):
-            # make a groupby count for the combination of x and y
-            df_grouped = (df_all_features
-                .groupby([x_axis, y_axis])
-                .size()
-                .reset_index(name="count"))
 
-            df_grouped.sort_values(y_axis, inplace=True, ascending=False)
+        mode = "mixed"
+        if x_axis in numeric_cols and y_axis in numeric_cols:
+            mode = "numeric"
+        elif x_axis not in numeric_cols and y_axis not in numeric_cols:
+            mode = "categorical"
 
-            categories_y = df_grouped[y_axis].unique().tolist()
-            categories_x = df_grouped[x_axis].unique().tolist()
-
-            fig = px.scatter(df_grouped, x=x_axis, y=y_axis,
-                    color="count", size="count",
-                    color_continuous_scale="matter",
-                    opacity=0.7,
-                    size_max = 15,
-                    title=f"{y_axis} vs {x_axis} coloured by count")
-
-
-            #categories = sorted(df_grouped[y_axis].dropna().unique())
-            n_categories = len(categories_y)
-            height = max(600, n_categories * 20)
-
-            fig.update_layout(height=height)
-            fig.update_traces(opacity=1)
-            fig.update_yaxes(
-                type="category",
-                categoryorder="category ascending",
-                range=[-0.5, n_categories - 0.5]
-            )
-
-        elif hue_axis == "count":
+        if hue_axis == "count":
+            if mode == "categorical":
+                df_grouped = (use_df_for_geom
+                    .groupby([x_axis, y_axis])
+                    .size()
+                    .reset_index(name="count"))
+                categories_y = df_grouped[y_axis].unique().tolist()
+                fig = px.scatter(df_grouped, x=x_axis, y=y_axis,
+                        color="count", size="count",
+                        color_continuous_scale="matter",
+                        opacity=0.7,
+                        size_max = 15,
+                        title=f"{y_axis} vs {x_axis} coloured by count")
+            else:
             # in this case we are looking at the opcatiy rather than the count
-            fig = px.scatter(df_all_features, x=x_axis, y=y_axis,
-                    opacity=0.1,
-                    title=f"{y_axis} vs {x_axis} coloured by count")
+                fig = px.scatter(df_all_features, x=x_axis, y=y_axis,
+                        opacity=0.1,
+                        title=f"{y_axis} vs {x_axis} coloured by count")
+                fig.update_traces(marker=dict(color="firebrick", size=8))
 
-
-            fig.update_traces(marker=dict(color="firebrick", size=8))
-
-        elif y_axis not in numeric_cols:
-            top_50 = df_all_features[y_axis].value_counts().head(50).index
-            df_plot = df_all_features[df_all_features[y_axis].isin(top_50)].copy()
-
-            #df_plot = df_all_features[df_all_features[y_axis].notna()].copy()
-            df_plot[y_axis] = df_plot[y_axis].astype(str)
-
-            categories = sorted(df_plot[y_axis].dropna().unique())
-            n_categories = len(categories)
-            height = max(600, n_categories * 20)
-
-            fig = px.scatter(df_plot, x=x_axis, y=y_axis, color=hue_axis,
-                title=f"{y_axis} vs {x_axis} coloured by {hue_axis}",
-                **color_kwargs,
-                category_orders={y_axis: categories})
-            fig.update_layout(height=height)
-            fig.update_traces(opacity=0.5)
-            fig.update_yaxes(
-                type="category",
-                categoryorder="category ascending",
-                range=[-0.5, n_categories - 0.5]
-            )
         else:
-            fig = px.scatter(df_all_features, x=x_axis, y=y_axis,
+            if mode == "categorical":
+                top_50 = df_all_features[y_axis].value_counts().head(50).index
+                df_plot = df_all_features[df_all_features[y_axis].isin(top_50)].copy()
+
+                #df_plot = df_all_features[df_all_features[y_axis].notna()].copy()
+                df_plot[y_axis] = df_plot[y_axis].astype(str)
+
+                categories = sorted(df_plot[y_axis].dropna().unique())
+                n_categories = len(categories)
+                height = max(600, n_categories * 20)
+
+                fig = px.scatter(df_plot, x=x_axis, y=y_axis, color=hue_axis,
+                    title=f"{y_axis} vs {x_axis} coloured by {hue_axis}",
+                    **color_kwargs,
+                    category_orders={y_axis: categories})
+                fig.update_layout(height=height)
+                fig.update_traces(opacity=0.5)
+                fig.update_yaxes(
+                    type="category",
+                    categoryorder="category ascending",
+                    range=[-0.5, n_categories - 0.5]
+                )
+            else:
+                fig = px.scatter(df_all_features, x=x_axis, y=y_axis,
                             color=hue_axis, opacity=0.5,
                             title=f"{y_axis} vs {x_axis} coloured by {hue_axis}",
                             **color_kwargs,
                             )
-                        #color_continuous_scale="Spectral",
-                        #color_discrete_sequence=px.colors.qualitative.Vivid_r)
+                        
         st.plotly_chart(fig)
 
 
