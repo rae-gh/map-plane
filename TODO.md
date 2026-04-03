@@ -1,6 +1,12 @@
+03/04/2026
+[ ] - Add options to umap
+[ ] - add umap to dataframe for plotting
+[ ] - enable scrolling though images based on cluster
+[ ] - enable overlay of images based on cluster ????? or ..... tau ...... ? Stop procrstinating and write up now with this.
+
 01/01/2026
-[ ] - Get dssp working
-[ ] - finish restructure without image classifier
+[x] - Get dssp working
+[x] - finish restructure without image classifier
 
 30/03/2026 End of week summary
 Done:
