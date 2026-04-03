@@ -78,7 +78,7 @@ def run_pca(df, feature_cols):
     return pca, X_pca, scaler, feature_cols
 
 
-def plot_variance_explained(pca, save_path):
+def plot_variance_explained(pca, save_path, save=False):
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
     # Individual variance
@@ -101,13 +101,15 @@ def plot_variance_explained(pca, save_path):
     axes[1].set_xlim(0.5, min(20, len(cumvar)) + 0.5)
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=150)
-    plt.close()
-    print(f"  Saved → {save_path}")
-    
+    if save:
+        plt.savefig(save_path, dpi=150)
+        print(f"  Saved → {save_path}")
+    print(f"Number of axes: {len(fig.axes)}")
+    return fig
 
 
-def plot_loadings(pca, feature_cols, n_components=4, save_path=None):
+
+def plot_loadings(pca, feature_cols, n_components=4, save_path=None, save=False):
     fig, axes = plt.subplots(1, n_components, figsize=(5 * n_components, 6))
 
     for i, ax in enumerate(axes):
@@ -125,12 +127,13 @@ def plot_loadings(pca, feature_cols, n_components=4, save_path=None):
         ax.set_xlabel("Loading")
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=150)
-    plt.close()
-    print(f"  Saved → {save_path}")
+    if save:
+        plt.savefig(save_path, dpi=150)
+        print(f"  Saved → {save_path}")
+    return fig
 
 
-def plot_scatter(df, X_pca, save_path):
+def plot_scatter(df, X_pca, save_path,save=False):
     n_plots = len(COLOUR_BY)
     fig, axes = plt.subplots(1, n_plots, figsize=(6 * n_plots, 5))
 
@@ -164,30 +167,33 @@ def plot_scatter(df, X_pca, save_path):
         ax.set_title(f"Coloured by {col}")
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=150)
-    plt.close()
+    if save:
+        plt.savefig(save_path, dpi=150)
+        print(f"  Saved → {save_path}")
+    return fig
 
 
-def print_report(pca, feature_cols):
-    print(f"\n{'='*50}")
-    print(f"  PCA SUMMARY")
-    print(f"{'='*50}")
+
+def print_report(pca, feature_cols, on_progress=print):
+    on_progress(f"\n{'='*50}")
+    on_progress(f"  PCA SUMMARY")
+    on_progress(f"{'='*50}")
 
     cumvar = np.cumsum(pca.explained_variance_ratio_) * 100
     for threshold in [50, 80, 90, 95]:
         n = np.argmax(cumvar >= threshold) + 1
-        print(f"  Components for {threshold}% variance: {n}")
+        on_progress(f"  Components for {threshold}% variance: {n}")
 
-    print(f"\n  Top features per component:")
+    on_progress(f"\n  Top features per component:")
     for i in range(min(4, len(pca.components_))):
         loadings = pca.components_[i]
         top_idx = np.argsort(np.abs(loadings))[::-1][:3]
         top = [f"{feature_cols[j]} ({loadings[j]:.2f})" for j in top_idx]
-        print(f"  PC{i+1} ({pca.explained_variance_ratio_[i]*100:.1f}%): {', '.join(top)}")
-    print(f"{'='*50}\n")
+        on_progress(f"  PC{i+1} ({pca.explained_variance_ratio_[i]*100:.1f}%): {', '.join(top)}")
+    on_progress(f"{'='*50}\n")
 
 
-def main():
+def main(save=False, on_progress=print):
     print(f"\nLoading data...")
     df, feature_cols = load_and_prepare(TSV_PATH)
 
@@ -199,12 +205,12 @@ def main():
     df["pca_2"] = X_pca[:, 1]
 
     print(f"\nGenerating plots...")
-    plot_variance_explained(pca, RESULTS_DIR / "variance_explained.png")
-    plot_loadings(pca, feature_cols, n_components=4,
-                  save_path=RESULTS_DIR / "feature_loadings.png")
-    plot_scatter(df, X_pca, RESULTS_DIR / "pca_scatter.png")
+    fig1 = plot_variance_explained(pca, RESULTS_DIR / "variance_explained.png", save=save)
+    fig2 = plot_loadings(pca, feature_cols, n_components=4,
+                  save_path=RESULTS_DIR / "feature_loadings.png", save=save)
+    fig3 = plot_scatter(df, X_pca, RESULTS_DIR / "pca_scatter.png", save=save)
 
-    print_report(pca, feature_cols)
+    print_report(pca, feature_cols, on_progress=on_progress)
 
     # Save loadings to CSV for inspection
     loadings_df = pd.DataFrame(
@@ -221,6 +227,9 @@ def main():
     )
     print(f"  Coordinates saved → {RESULTS_DIR / 'pca_coordinates.csv'}")
 
+    return fig1, fig2, fig3
+
 
 if __name__ == "__main__":
-    main()
+    fig1, fig2, fig3 = main(save=True)
+

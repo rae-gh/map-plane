@@ -9,6 +9,7 @@ from pipeline.peptide.config import GEOM_PARAMS
 from pipeline.peptide.config import ADD_PARAMS
 from pipeline.peptide.config import DSSP_MAP
 from pipeline.peptide import c0_machine_correlation as corr_module
+from pipeline.peptide import c1_machine_pca as pca_module
 
 
 
@@ -261,7 +262,22 @@ with tabCorr:
         st.plotly_chart(fig2, width=700, height=700)
 
 with tabPCA:
-    st.write("PCA features coming soon...")
+    cont = st.empty()
+    lines = []
+    def on_progress(msg):
+        lines.append(msg)
+        cont.code("\n".join(lines))
+    fig1, fig2, fig3 = pca_module.main(save=False, on_progress=on_progress)
+    with st.expander("PCA variance explained", expanded=True):
+        st.write("The first plot shows the cumulative variance explained by the principal components. This helps to determine how many components are needed to capture most of the variance in the data.")
+        st.pyplot(fig1, width="content")
+    with st.expander("PCA feature loadings"):
+        st.write("The second plot shows the loadings of each feature on the principal components. This helps to identify which features contribute most to each component.")
+        st.pyplot(fig2, width="content")
+    with st.expander("PCA scatter plot"):
+        st.write("The third plot shows the data points projected onto the first two principal components, coloured by a selected structural property.")
+        st.pyplot(fig3, width="content")
+
 
 st.write("---  ")
 st.write("**References**")
