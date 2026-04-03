@@ -97,6 +97,17 @@ with tabGroup:
             st.dataframe(group_counts, width="stretch", hide_index=True)
 
 with tabGeom:
+
+    sel_lengths = [col for col in df_all_features.columns if col.count(":") == 1 and "_" not in col]
+    sel_angles = [col for col in df_all_features.columns if col.count(":") == 2 and "_" not in col]
+    sel_dihedrals = [col for col in df_all_features.columns if col.count(":") == 3 and "_" not in col]
+    sel_lengths.sort()
+    sel_angles.sort()
+    sel_dihedrals.sort()
+    #st.write(sel_lengths)
+    #st.write(sel_angles)
+    #st.write(sel_dihedrals)
+
     st.write("Geometry features on filtered subset...")
     use_df_for_geom = filtered.copy()
     cols = st.columns(3)
@@ -104,12 +115,25 @@ with tabGeom:
     for col in df_all_features.columns:
         hue_cols.append(col)
 
+    def get_list(x):
+        if x == "lengths":
+            return sel_lengths
+        elif x == "angles":
+            return sel_angles
+        elif x == "dihedrals":
+            return sel_dihedrals
+        else:
+            return [col for col in df_all_features.columns if col not in sel_lengths + sel_angles + sel_dihedrals]
+
     with cols[0]:
-        x_axis = st.selectbox("X-axis", options=use_df_for_geom.columns, index=10)
+        x_opts = st.radio("X-axis type", options=["lengths", "angles", "dihedrals", "other"], index=1, horizontal=True)
+        x_axis = st.selectbox("X-axis", options=get_list(x_opts), index=0)
     with cols[1]:
-        y_axis = st.selectbox("Y-axis", options=use_df_for_geom.columns, index=11)
+        y_opts = st.radio("Y-axis type", options=["lengths", "angles", "dihedrals", "other"], index=2, horizontal=True)
+        y_axis = st.selectbox("Y-axis", options=get_list(y_opts), index=1)
     with cols[2]:
-        hue_axis = st.selectbox("Colour by", options=hue_cols, index=0)
+        hue_opts = st.radio("Colour by type", options=["lengths", "angles", "dihedrals", "other"], index=3, horizontal=True)
+        hue_axis = st.selectbox("Colour by", options=get_list(hue_opts), index=6)
 
 
     if x_axis == y_axis:
@@ -120,8 +144,17 @@ with tabGeom:
         #1. All numerical
         #2. All categorical
         # Pick color args based on hue type
-        if hue_axis in numeric_cols:
+        if hue_axis in numeric_cols and hue_axis != "count":
             color_kwargs = {"color_continuous_scale": "Spectral"}
+            q_low  = df_all_features[hue_axis].quantile(0.05)
+            q_high = df_all_features[hue_axis].quantile(0.95)
+            range_color = [q_low, q_high]
+            st.write(f"""
+                    Hue range: {hue_axis} **{df_all_features[hue_axis].min():.2f}** : **{df_all_features[hue_axis].max():.2f}**
+                    Clipping to: **{range_color[0]:.2f}** : **{range_color[1]:.2f}** (5th to 95th percentile)
+            """)
+
+
         else:
             color_kwargs = {"color_discrete_sequence": px.colors.qualitative.Vivid_r}
 
@@ -131,6 +164,9 @@ with tabGeom:
             mode = "numeric"
         elif x_axis not in numeric_cols and y_axis not in numeric_cols:
             mode = "categorical"
+
+        # a numerical hue needs clipping for outliers
+
 
         if hue_axis == "count":
             if mode == "categorical":
@@ -181,7 +217,10 @@ with tabGeom:
                             title=f"{y_axis} vs {x_axis} coloured by {hue_axis}",
                             **color_kwargs,
                             )
-                        
+
+        if hue_axis in numeric_cols and hue_axis != "count":
+            fig.update_coloraxes(cmin=range_color[0], cmax=range_color[1])
+
         st.plotly_chart(fig)
 
 
