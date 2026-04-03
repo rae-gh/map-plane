@@ -20,13 +20,21 @@ st.set_page_config(
 )
 st.title("🔮 Peptide Bond Features - Web App")
 
-tabAll, tabImages, tabGroup, tabGeom, tabPCA = st.tabs(["All data", "Chosen images", "Group by", "Geometry", "PCA"])
+all_tabs = []
+all_tabs.append("All data")
+all_tabs.append("Chosen images")
+all_tabs.append("Group by")
+all_tabs.append("Geometry")
+all_tabs.append("Correlation")
+all_tabs.append("PCA")
+
+(tabAll, tabImages, tabGroup, tabGeom, tabCorr, tabPCA) = st.tabs(all_tabs)
 
 with tabAll:
 
     df_all_features = pd.read_csv("data/peptide_bonds_data.tsv", sep="\t", dtype=str)
     # specify coluim types to avoid warnings
-    numeric_cols = GEOM_PARAMS + ["resolution", "bf_N:CA:C", "bf_C:O", "O-1:N"]
+    numeric_cols = GEOM_PARAMS + ["resolution", "bf_N:CA:C", "bf_C:O", "O-1:N", "count"]
     for col in numeric_cols:
         if col in df_all_features.columns:
             df_all_features[col] = pd.to_numeric(df_all_features[col], errors="coerce")
@@ -43,6 +51,8 @@ with tabAll:
         st.error(f"Invalid query: {e}")
         filtered = df_all_features
 
+    # drop all NA rows in dssp and aa for the group by tab
+    filtered.dropna(subset=["dssp", "aa"], inplace=True)
     st.dataframe(filtered)
 
 with tabImages:
@@ -73,9 +83,8 @@ with tabGroup:
         group_col1 = st.selectbox("Group by 1", options=df_all_features.columns, index=0)
     with cols[1]:
         group_col2 = st.selectbox("Group by 2", options=df_all_features.columns, index=1)
-    with cols[2]:
-        st.write("DSSP categories")
-        st.write(DSSP_MAP)
+    dssps = " ".join([f"{code}: {desc}" for code, desc in DSSP_MAP.items()])
+    st.code(f"{dssps}", language="text")
 
     if group_col1 == group_col2:
         st.warning("Please select two different columns to group by.")
@@ -85,22 +94,104 @@ with tabGroup:
             group_counts = df_all_features.groupby([group_col1, group_col2]).size()
             group_counts = group_counts.reset_index(name="count").sort_values("count", ascending=False)
             st.write(f"Counts by {group_col1} and {group_col2}:")
-            st.dataframe(group_counts, use_container_width=False, hide_index=True)
+            st.dataframe(group_counts, width="stretch", hide_index=True)
 
 with tabGeom:
     st.write("Geometry features...")
     cols = st.columns(3)
+    hue_cols = ["count"]
+    for col in df_all_features.columns:
+        hue_cols.append(col)
+
     with cols[0]:
         x_axis = st.selectbox("X-axis", options=df_all_features.columns, index=10)
     with cols[1]:
         y_axis = st.selectbox("Y-axis", options=df_all_features.columns, index=11)
     with cols[2]:
-        hue_axis = st.selectbox("Colour by", options=df_all_features.columns, index=9)
+        hue_axis = st.selectbox("Colour by", options=hue_cols, index=0)
 
-    fig = px.scatter(df_all_features, x=x_axis, y=y_axis, color=hue_axis, opacity=0.5, title=f"{y_axis} vs {x_axis} coloured by {hue_axis}",
-                     color_continuous_scale="Spectral",
-                     color_discrete_sequence=px.colors.qualitative.Vivid_r)
-    st.plotly_chart(fig)
+
+    if x_axis == y_axis:
+        st.warning("Please select different columns for x and y axes.")
+    else:
+        # Pick color args based on hue type
+        if hue_axis in numeric_cols:
+            color_kwargs = {"color_continuous_scale": "Spectral"}
+        else:
+            color_kwargs = {"color_discrete_sequence": px.colors.qualitative.Vivid_r}
+
+        if hue_axis == "count" and (x_axis not in numeric_cols and y_axis not in numeric_cols):
+            # make a groupby count for the combination of x and y
+            df_grouped = (df_all_features
+                .groupby([x_axis, y_axis])
+                .size()
+                .reset_index(name="count"))
+
+            df_grouped.sort_values(y_axis, inplace=True, ascending=False)
+
+            categories_y = df_grouped[y_axis].unique().tolist()
+            categories_x = df_grouped[x_axis].unique().tolist()
+
+            fig = px.scatter(df_grouped, x=x_axis, y=y_axis,
+                    color="count", size="count",
+                    color_continuous_scale="matter",
+                    opacity=0.7,
+                    size_max = 15,
+                    title=f"{y_axis} vs {x_axis} coloured by count")
+
+
+            #categories = sorted(df_grouped[y_axis].dropna().unique())
+            n_categories = len(categories_y)
+            height = max(600, n_categories * 20)
+
+            fig.update_layout(height=height)
+            fig.update_traces(opacity=1)
+            fig.update_yaxes(
+                type="category",
+                categoryorder="category ascending",
+                range=[-0.5, n_categories - 0.5]
+            )
+
+        elif hue_axis == "count":
+            # in this case we are looking at the opcatiy rather than the count
+            fig = px.scatter(df_all_features, x=x_axis, y=y_axis,
+                    opacity=0.1,
+                    title=f"{y_axis} vs {x_axis} coloured by count")
+
+
+            fig.update_traces(marker=dict(color="firebrick", size=8))
+
+        elif y_axis not in numeric_cols:
+            top_50 = df_all_features[y_axis].value_counts().head(50).index
+            df_plot = df_all_features[df_all_features[y_axis].isin(top_50)].copy()
+
+            #df_plot = df_all_features[df_all_features[y_axis].notna()].copy()
+            df_plot[y_axis] = df_plot[y_axis].astype(str)
+
+            categories = sorted(df_plot[y_axis].dropna().unique())
+            n_categories = len(categories)
+            height = max(600, n_categories * 20)
+
+            fig = px.scatter(df_plot, x=x_axis, y=y_axis, color=hue_axis,
+                title=f"{y_axis} vs {x_axis} coloured by {hue_axis}",
+                **color_kwargs,
+                category_orders={y_axis: categories})
+            fig.update_layout(height=height)
+            fig.update_traces(opacity=0.5)
+            fig.update_yaxes(
+                type="category",
+                categoryorder="category ascending",
+                range=[-0.5, n_categories - 0.5]
+            )
+        else:
+            fig = px.scatter(df_all_features, x=x_axis, y=y_axis,
+                            color=hue_axis, opacity=0.5,
+                            title=f"{y_axis} vs {x_axis} coloured by {hue_axis}",
+                            **color_kwargs,
+                            )
+                        #color_continuous_scale="Spectral",
+                        #color_discrete_sequence=px.colors.qualitative.Vivid_r)
+        st.plotly_chart(fig)
 
 
 
