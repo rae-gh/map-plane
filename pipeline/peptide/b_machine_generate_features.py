@@ -13,6 +13,9 @@ import pandas as pd
 import uuid
 import os
 
+from config import GEOM_PARAMS
+from config import ADD_PARAMS
+
 
 
 ####### CONFIGURATION ####################
@@ -49,32 +52,12 @@ print("Data directory set to: ", MPDATA_DIR)
 
 # geom_params
 ls_geos = []
-ls_geos.append("N:N+1")
-ls_geos.append("C:N+1")
-ls_geos.append("C:O")
-ls_geos.append("N:O")
-ls_geos.append("CA:CA+1")
-ls_geos.append("CA-1:CA")
-ls_geos.append("O-1:N")
-
-ls_geos.append("N:CA:C:N+1")
-ls_geos.append("C-1:N:CA:C")
-ls_geos.append("N:CA:C:O")
-ls_geos.append("CA-1:C-1:N:CA")
-ls_geos.append("CA:C:N+1:CA+1")
-
-ls_geos.append("N:CA:C")
-ls_geos.append("CA:C:N+1")
-ls_geos.append("C-1:N:CA")
-ls_geos.append("N:CA:O")
-ls_geos.append("CA-1:CA:CA+1")
-ls_geos.append("N-1:O-1:N")
+for gp in GEOM_PARAMS:
+    ls_geos.append(gp)
 
 ls_extra = []
-ls_extra.append("dssp")
-ls_extra.append("motif_CA-1:CA:CA+1")
-ls_extra.append("bf_N:CA:C")
-ls_extra.append("bf_C:O")
+for ap in ADD_PARAMS:
+    ls_extra.append(ap)
 
 out_tsv = f"{DATA_DIR}/peptide_bonds_data.tsv"
 with open(out_tsv, "w") as out_f:

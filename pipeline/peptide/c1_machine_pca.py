@@ -23,16 +23,14 @@ from pathlib import Path
 TSV_PATH    = Path("data/peptide_bonds_data.tsv")
 RESULTS_DIR = Path("results/pca")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-from config import MPDATA_DIR
+from config import GEOM_PARAMS
+from config import ADD_PARAMS
+
 
 NUMERIC_FEATURES = [
     "resolution",
-    "bf_N:CA:C", "bf_C:O",
-    "N:N+1", "C:N+1", "C:O", "N:O", "CA:CA+1", "CA-1:CA",
-    "N:CA:C:N+1", "C-1:N:CA:C", "N:CA:C:O", "O-1:N", "N-1:O-1:N"
-    "CA-1:C-1:N:CA", "CA:C:N+1:CA+1",
-    "N:CA:C", "CA:C:N+1", "C-1:N:CA", "N:CA:O", "CA-1:CA:CA+1",
-]
+    "bf_N:CA:C", "bf_C:O"] + GEOM_PARAMS
+
 
 CATEGORICAL_FEATURES = ["dssp", "aa"]
 

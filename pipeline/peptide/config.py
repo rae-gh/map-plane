@@ -1,5 +1,5 @@
-# Config for the peptifde bond pipeline
-GEOM_PARAMS = [
+# Config for the peptide bond pipeline
+GEOM_LENGTHS = [
     "N:N+1",
     "C:N+1",
     "C:O",
@@ -7,18 +7,29 @@ GEOM_PARAMS = [
     "O-1:N",
     "CA:CA+1",
     "CA-1:CA",
-    "N:CA:C:N+1",
-    "C-1:N:CA:C",
-    "N:CA:C:O",
-    "CA-1:C-1:N:CA",
-    "CA:C:N+1:CA+1",
+    "O:N+1",
+]
+
+GEOM_ANGLES = [
     "N:CA:C",
     "CA:C:N+1",
     "C-1:N:CA",
     "N:CA:O",
     "CA-1:CA:CA+1",
-    "N-1:O-1:N"
+    "N-1:O-1:N",
+    "CA:C:O",
+    "O:C:N+1",
 ]
+
+GEOM_DIHEDRALS = [
+    "N:CA:C:N+1",
+    "C-1:N:CA:C",
+    "N:CA:C:O",
+    "CA-1:C-1:N:CA",
+    "CA:C:N+1:CA+1",
+]
+
+GEOM_PARAMS = GEOM_LENGTHS + GEOM_ANGLES + GEOM_DIHEDRALS
 
 ADD_PARAMS = [
     "dssp",
