@@ -115,7 +115,7 @@ with tabGeom:
     for col in df_all_features.columns:
         hue_cols.append(col)
 
-    def get_list(x):
+    def get_list(x, axis=None):
         if x == "lengths":
             return sel_lengths
         elif x == "angles":
@@ -123,7 +123,10 @@ with tabGeom:
         elif x == "dihedrals":
             return sel_dihedrals
         else:
-            return [col for col in df_all_features.columns if col not in sel_lengths + sel_angles + sel_dihedrals]
+            if axis == "hue":
+                return ["count"] + [col for col in df_all_features.columns if col not in sel_lengths + sel_angles + sel_dihedrals]
+            else:
+                return [col for col in df_all_features.columns if col not in sel_lengths + sel_angles + sel_dihedrals]
 
     with cols[0]:
         x_opts = st.radio("X-axis type", options=["lengths", "angles", "dihedrals", "other"], index=1, horizontal=True)
@@ -133,7 +136,7 @@ with tabGeom:
         y_axis = st.selectbox("Y-axis", options=get_list(y_opts), index=1)
     with cols[2]:
         hue_opts = st.radio("Colour by type", options=["lengths", "angles", "dihedrals", "other"], index=3, horizontal=True)
-        hue_axis = st.selectbox("Colour by", options=get_list(hue_opts), index=6)
+        hue_axis = st.selectbox("Colour by", options=get_list(hue_opts, "hue"), index=0)
 
 
     if x_axis == y_axis:
@@ -221,7 +224,24 @@ with tabGeom:
         if hue_axis in numeric_cols and hue_axis != "count":
             fig.update_coloraxes(cmin=range_color[0], cmax=range_color[1])
 
-        st.plotly_chart(fig)
+        # if the x and y are the same type, use the same axis range for better comparison
+        if x_axis in sel_lengths and y_axis in sel_lengths:
+            fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
+        elif x_axis in (sel_angles + sel_dihedrals) and y_axis in (sel_angles + sel_dihedrals):
+            fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
+
+
+        fig.update_layout(
+            xaxis=dict(autorange=True),
+            yaxis=dict(autorange=True)
+        )
+        fig.update_layout(
+            xaxis=dict(showgrid=True, gridcolor="lightgrey", gridwidth=0.5),
+            yaxis=dict(showgrid=True, gridcolor="lightgrey", gridwidth=0.5)
+        )
+        fig.update_layout(height=650, width=650)
+
+        st.plotly_chart(fig, width=700, height=700)
 
 
 
