@@ -189,11 +189,13 @@ class MapPlotHelp(object):
         fig.update_xaxes(scaleanchor="y",scaleratio=1)
 
         header_padding = 0.98
+        top = 100
         if title == "":
             header_padding = 0.2
+            top = 10
 
         fig.update_layout(
-            margin=dict(l=1, r=1, t=100, b=10),  # t=30 gives title room
+            margin=dict(l=1, r=1, t=top, b=10),  # t=30 gives title room
             title=dict(
                 xanchor='center',
                 text=title,
