@@ -23,6 +23,11 @@ st.set_page_config(
 )
 st.title("🔮 Peptide Bond Features - Web App")
 
+@st.cache_data
+def get_big_csv():
+    df_all_features = pd.read_csv("data/peptide_bonds_data_with_clusters.tsv", sep="\t", dtype=str)
+    return df_all_features
+
 all_tabs = []
 all_tabs.append("All data")
 all_tabs.append("Chosen images")
@@ -36,7 +41,7 @@ all_tabs.append("Umap")
 
 with tabAll:
 
-    df_all_features = pd.read_csv("data/peptide_bonds_data_with_clusters.tsv", sep="\t", dtype=str)
+    df_all_features = get_big_csv()
     # specify coluim types to avoid warnings
     numeric_cols = GEOM_PARAMS + ["resolution", "bf_N:CA:C", "bf_C:O", "O-1:N", "count"]
     for col in numeric_cols:
@@ -60,10 +65,10 @@ with tabAll:
     st.dataframe(filtered)
 
 with tabImages:
-    if len(filtered) > 500:
+    if len(filtered) > 5000:
         st.warning("Too many rows to show images. Please filter down to 200 or fewer.")
     else:
-        st.write("Showing images for filtered data:")
+        st.write(f"Showing plots for filtered data count: {len(filtered)}")
         pdb = ""
         count = 0
         for idx, row in filtered.iterrows():
@@ -112,7 +117,7 @@ with tabGeom:
     #st.write(sel_angles)
     #st.write(sel_dihedrals)
 
-    st.write("Geometry features on filtered subset...")
+    st.write(f"Geometry features on filtered subset of {len(filtered)} rows...")
     use_df_for_geom = filtered.copy()
     cols = st.columns(3)
     hue_cols = ["count"]
@@ -296,6 +301,7 @@ with tabUmap:
     if st.button("Run UMAP analysis"):
         with st.spinner("Running UMAP analysis...", show_time=True):
             ss.figu, ss.dfu, ss.figrama = c2_machine_umap.main(n_neighbors, min_dist, min_cluster_size)
+
     if ss.figu is not None and ss.dfu is not None:
         cols_umap = st.columns(2)
         with cols_umap[0]:

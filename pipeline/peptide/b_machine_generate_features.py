@@ -61,7 +61,7 @@ for ap in ADD_PARAMS:
 
 out_tsv = f"{DATA_DIR}/peptide_bonds_data.tsv"
 with open(out_tsv, "w") as out_f:
-    out_f.write("pdb_code\tresolution\trid\tchain\taa\timage_name")
+    out_f.write("pdb_code\tresolution\trid\tchain\taa\timage_name\tsoftware\trefinement\tr_work\tr_free\tstereo_target\tis_multipole")
     for gp in ls_extra + ls_geos:
         out_f.write(f"\t{gp}")
     out_f.write("\n")
@@ -74,6 +74,13 @@ for row in pbd_query_df.itertuples():
     count += 1
     pdb_code = row.pdb_code
     resolution = row.resolution
+    software = row.software
+    refinement = row.refinement
+    r_work = row.r_work
+    r_free = row.r_free
+    stereo_target = row.stereo_target
+    is_multipole = row.is_multipole
+
     print(f"{count}/{len(pdb_codes)}------ {pdb_code} {resolution} ------")
     ml = mman.MapsManager().get_or_create(pdb_code,file=1,header=1,values=1)
     mf = mfun.MapFunctions(pdb_code,ml.mobj,ml.pobj,interpolation)
@@ -81,7 +88,24 @@ for row in pbd_query_df.itertuples():
 
     geomm = geom_maker([pobj])
 
-    df_geos = geomm.calculateGeometry(ls_geos)
+    core_list = []
+    prev_list = []
+    next_list = []
+    both_list = []
+    for col in ls_geos:
+        if "-" not in col and "+" not in col:
+            core_list.append(col)
+        elif "-" in col and "+" not in col:
+            prev_list.append(col)
+        elif "+" in col and "-" not in col:
+            next_list.append(col)
+        else:
+            both_list.append(col)
+    df_core = geomm.calculateGeometry(core_list)
+    df_prev = geomm.calculateGeometry(prev_list)
+    df_next = geomm.calculateGeometry(next_list)
+    df_both = geomm.calculateGeometry(both_list)
+
     #df_geos.to_csv(f"{DATA_DIR}/geometry_{pdb_code}.tsv", sep="\t", index=False)
     # this returns a dataframe with columns for each geometry and also columns for
     # residue level: aa, dssp
@@ -132,13 +156,26 @@ for row in pbd_query_df.itertuples():
 
         ##########################################
         with open(out_tsv, "a") as out_f:
-            out_f.write(f"{pdb_code}\t{resolution}\t{rid}\t{a1['chain']}\t{aa}\t{image_name}")
+            out_f.write(f"{pdb_code}\t{resolution}\t{rid}\t{a1['chain']}\t{aa}\t{image_name}\t{software}\t{refinement}\t{r_work}\t{r_free}\t{stereo_target}\t{is_multipole}")
             for geocol in ls_extra + ls_geos:
                 # match on chain and rid to get the geo value for this residue
-                chain_df = df_geos[df_geos['chain'] == chn]
-                rid_df = chain_df[chain_df['rid'] == rid]
-                geoval = rid_df[geocol].values[0] if not rid_df.empty else None
-                out_f.write(f"\t{str(geoval)}")
+                use_df = None
+                if geocol in df_core.columns:
+                    use_df = df_core
+                elif geocol in df_prev.columns:
+                    use_df = df_prev
+                elif geocol in df_next.columns:
+                    use_df = df_next
+                elif geocol in df_both.columns:
+                    use_df = df_both
+
+                if use_df is not None:
+                    chain_df = use_df[use_df['chain'] == chn]
+                    rid_df = chain_df[chain_df['rid'] == rid]
+                    geoval = rid_df[geocol].values[0] if not rid_df.empty else None
+                    out_f.write(f"\t{str(geoval)}")
+                else:
+                    out_f.write("\t")
             out_f.write("\n")
             out_f.flush()
         ##########################################
