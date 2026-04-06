@@ -188,13 +188,17 @@ class MapPlotHelp(object):
         fig.update_yaxes(scaleanchor="x",scaleratio=1)
         fig.update_xaxes(scaleanchor="y",scaleratio=1)
 
+        header_padding = 0.98
+        if title == "":
+            header_padding = 0.2
+
         fig.update_layout(
             margin=dict(l=1, r=1, t=100, b=10),  # t=30 gives title room
             title=dict(
                 xanchor='center',
                 text=title,
                 x=0.5,
-                y=0.98,
+                y=header_padding,
                 yanchor='top',
                 font=dict(size=60, color='black')
             ),
