@@ -6,6 +6,7 @@
 from map_plane.vxyz import spacetransform as space
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
+import numpy as np
 
 
 #####################################################################
@@ -78,7 +79,7 @@ class MapPlotHelp(object):
         #    min_percent,max_percent = 1,1
 
         #if hue != "MASK":
-        absmin,absmax,d0,d1,d2 = self.__get_levels__(min_percent,max_percent,minv,maxv,hue=="MASK")
+        absmin,absmax,d0,d1,d2 = self.__get_levels__(values,min_percent,max_percent)
         #else:
         #absmin,absmax,d0,d1,d2 = minv,maxv,1,1,1
 
@@ -127,8 +128,8 @@ class MapPlotHelp(object):
                            plot_type="contour",
                            points=[],
                            naybs=[],
-                           min_percent=1,
-                           max_percent=1,
+                           min_percent=0,
+                           max_percent=100,
                            hue="GBR",
                            levels=20,
                            title="Map-Plane Plot 2d",
@@ -145,7 +146,14 @@ class MapPlotHelp(object):
                 mind = min(vals[i][j],mind)
                 maxd = max(vals[i][j],maxd)
 
-        absmin,absmax,d0,d1,d2 = self.__get_levels__(min_percent,max_percent,mind,maxd,hue=="MASK")
+        # quartiles
+
+        # Flatten to 1D and find percentile
+        high = np.percentile(vals2d, 95)  # 95th percentile
+        low = np.percentile(vals2d, 5)    # 5th percentile
+        print("5th percentile:", low)
+        print("95th percentile:", high)
+        absmin,absmax,d0,d1,d2 = self.__get_levels__(vals2d,min_percent,max_percent)
 
         colorscale=self.__get_colors__(hue,d0,d1,d2,min_percent,max_percent,transparency=transparency,)
 
@@ -258,16 +266,10 @@ class MapPlotHelp(object):
 
         return data_scatter
 
-    def __get_levels__(self,min_rr, max_rr, min_vv, max_vv,absolute):
+    def __get_levels__(self,values,min_percent=0, max_percent=100):
 
-        if absolute:
-            mn = min(min_rr,max_rr)
-            mx = max(min_rr,max_rr)
-            absmin = (mn*(max_vv-min_vv)) + min_vv
-            absmax = (mx*(max_vv-min_vv)) + min_vv
-        else:
-            absmin = min_vv*min_rr
-            absmax = max_vv*max_rr
+        absmin = np.percentile(values, min_percent)    # 5th percentile   else:
+        absmax = np.percentile(values, max_percent)  # 95th percentile
 
         if absmin == absmax:
             d0 = 0.5
@@ -321,9 +323,6 @@ class MapPlotHelp(object):
         fire = f"rgba(178,34,34,{0.7})"
         alice = f"rgba(240,248,255,{0.7})"
         rose = f"rgba(255,228,225,{0.7})"
-
-
-
 
         if hue == "GBR":
             return [(0, grey), (d0, snow), (d1, cornflower),(d2, crimson),(1.0, darkred)]
