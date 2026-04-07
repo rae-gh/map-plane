@@ -1,7 +1,10 @@
+07/04/2026
+[ ] - Bug, the fig01 test works locally but fails in pytest due to the request for negative values in the colouir scale.
+
 03/04/2026
-[ ] - Add options to umap
-[ ] - add umap to dataframe for plotting
-[ ] - enable scrolling though images based on cluster
+[x] - Add options to umap
+[x] - add umap to dataframe for plotting
+[x] - enable scrolling though images based on cluster
 [ ] - enable overlay of images based on cluster ????? or ..... tau ...... ? Stop procrstinating and write up now with this.
 
 01/01/2026
