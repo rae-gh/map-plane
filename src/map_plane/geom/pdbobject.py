@@ -235,7 +235,7 @@ class PdbObject(object):
                     dicdfs.append(dic)
         return pd.DataFrame.from_dict(dicdfs)
 
-    def dsspDataFrame(self):
+    def dsspDataFrameConda(self):
         from Bio.PDB.DSSP import DSSP
         model = self.bio_struc[0]
         dssp = DSSP(model, self.pdb_path, dssp="mkdssp")  # specify binary name
@@ -250,6 +250,36 @@ class PdbObject(object):
             dic = {'pdbCode':self.pdb_code,'chain':chn,'rid':res,'dssp':dsp}
             dicdssp.append(dic)
         return pd.DataFrame.from_dict(dicdssp)
+
+    def dsspDataFrame(self):
+        import pydssp
+        import numpy as np
+
+        try:
+            with open(self.pdb_path, 'r') as f:
+                pdb_text = f.read()
+
+            # pydssp handles multi-chain PDB files
+            coords, seq = pydssp.read_pdbtext(pdb_text)
+            ss_array = pydssp.assign(coords, out="c8")
+
+            # Build dataframe matching your existing format
+            # seq is list of (chain, resnum, resname) tuples
+            dicdssp = []
+            for (chain, rid, aa), ss in zip(seq, ss_array):
+                dic = {
+                    'pdbCode': self.pdb_code,
+                    'chain': chain,
+                    'rid': rid,
+                    'dssp': ss
+                }
+                dicdssp.append(dic)
+
+            return pd.DataFrame.from_dict(dicdssp)
+
+        except Exception as e:
+            print(f"DSSP failed for {self.pdb_code}: {e}")
+            return pd.DataFrame()
 
 
     # if we add lines from a cif file I will do something different
