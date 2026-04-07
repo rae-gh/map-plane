@@ -23,7 +23,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest", "ruff"]
-dev = ["pytest", "ruff", "ipykernel", "jupyter", "pre-commit"]
+dev = ["pytest", "ruff", "ipykernel", "jupyter", "pre-commit", "scikit-learn", "streamlit", "umap-learn", "hdbscan", "biopython==1.81", "pydssp", "rcsb-api"]
 ml = ["torch", "torchvision", "rcsb-api", "Pillow", "scikit-learn", "streamlit", "timm==0.9.16", "huggingface_hub"]
 analysis = ["scikit-learn", "streamlit", "umap-learn", "hdbscan", "biopython==1.81", "pydssp", "rcsb-api"]
 
