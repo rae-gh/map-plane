@@ -85,7 +85,7 @@ class MapPlotHelp(object):
 
 
 
-        colorscale=self.__get_colors__(hue,d0,d1,d2,min_percent,max_percent,transparency=transparency)
+        colorscale=self.__get_colors__(hue,d0,d1,d2,transparency=transparency)
 
         fig= go.Figure(data=go.Isosurface(
         x=xs,
@@ -149,13 +149,14 @@ class MapPlotHelp(object):
         # quartiles
 
         # Flatten to 1D and find percentile
-        high = np.percentile(vals2d, 95)  # 95th percentile
-        low = np.percentile(vals2d, 5)    # 5th percentile
-        print("5th percentile:", low)
-        print("95th percentile:", high)
-        absmin,absmax,d0,d1,d2 = self.__get_levels__(vals2d,min_percent,max_percent)
+        absmin,absmax,d0,d1,d2 = self.__get_levels__(vals,min_percent,max_percent)
+        print("absmin:", absmin)
+        print("absmax:", absmax)
+        print("d0:", d0)
+        print("d1:", d1)
+        print("d2:", d2)
 
-        colorscale=self.__get_colors__(hue,d0,d1,d2,min_percent,max_percent,transparency=transparency,)
+        colorscale=self.__get_colors__(hue,d0,d1,d2,transparency=transparency,)
 
         if len(naybs) > 0:
             if plot_type == "contour":
@@ -279,9 +280,12 @@ class MapPlotHelp(object):
             d0 = (0 - absmin) / (absmax - absmin)
         d1 = d0 + ((1-d0)/3)
         d2 = d0 + (2*(1-d0)/3)
-        return absmin,absmax,d0,d1,d2
+        return float(absmin),float(absmax),float(d0),float(d1),float(d2)
 
-    def __get_colors__(self,hue,d0,d1,d2,min_r,max_r,transparency):
+    def __get_colors__(self,hue,d0,d1,d2,transparency):
+        if d0 < 0 or d0 > 1 or d1 < 0 or d1 > 1 or d2 < 0 or d2 > 1:
+            print("Warning: levels are out of bounds for colorscale, check the min_percent and max_percent values")
+
         t0,t1,t2,t3,t4,tx,tl,tm,tu = 1,1,1,1,1,1,1,1,1
         if transparency == "low":
             t0,t1,t2,t3,t4 = 0.5,0.5,0.5,0.5,0.5
@@ -360,13 +364,8 @@ class MapPlotHelp(object):
             else:
                 return [(0,sea),(d0,ghost),(1.0,indigo)]
         elif hue == "MASK":
-            m2 = min(min_r,max_r)
-            m3 = max(min_r,max_r)
-            m1 = max(0,min(min_r,max_r)-0.01)
-            m4 = min(1,max(min_r,max_r)+0.01)
-            #return [(0,shell),(m1,shell),(m2,slate),(m3,fire),(m4,shell),(1.0,shell)]
             return [(0,alice),(0.1,alice),(0.2,slate),(0.8,fire),(0.9,rose),(1.0,rose)]
-            #return [(0,shell),(0.5,slate),(1.0,shell)]
+
 
 
 
