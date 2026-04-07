@@ -235,21 +235,21 @@ class PdbObject(object):
                     dicdfs.append(dic)
         return pd.DataFrame.from_dict(dicdfs)
 
-    def dsspDataFrameConda(self):
-        from Bio.PDB.DSSP import DSSP
-        model = self.bio_struc[0]
-        dssp = DSSP(model, self.pdb_path, dssp="mkdssp")  # specify binary name
-        print(dssp)
-        dicdssp = []
-        chn = ""
-        res = ""
-        for chain in dssp.keys():
-            chn = chain[0]
-            res = chain[1][1]
-            dsp = dssp[chain][2]
-            dic = {'pdbCode':self.pdb_code,'chain':chn,'rid':res,'dssp':dsp}
-            dicdssp.append(dic)
-        return pd.DataFrame.from_dict(dicdssp)
+    # def dsspDataFrameConda(self):
+    #     from Bio.PDB.DSSP import DSSP
+    #     model = self.bio_struc[0]
+    #     dssp = DSSP(model, self.pdb_path, dssp="mkdssp")  # specify binary name
+    #     print(dssp)
+    #     dicdssp = []
+    #     chn = ""
+    #     res = ""
+    #     for chain in dssp.keys():
+    #         chn = chain[0]
+    #         res = chain[1][1]
+    #         dsp = dssp[chain][2]
+    #         dic = {'pdbCode':self.pdb_code,'chain':chn,'rid':res,'dssp':dsp}
+    #         dicdssp.append(dic)
+    #     return pd.DataFrame.from_dict(dicdssp)
 
     def dsspDataFrame(self):
         import pydssp
