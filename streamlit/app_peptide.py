@@ -25,7 +25,7 @@ st.title("🔮 Peptide Bond Features - Web App")
 
 @st.cache_data
 def get_big_csv():
-    df_all_features = pd.read_csv("data/peptide_bonds_data_with_clusters.tsv", sep="\t", dtype=str)
+    df_all_features = pd.read_csv("data/peptide_bonds_data.tsv", sep="\t", dtype=str)
     return df_all_features
 
 all_tabs = []
@@ -69,6 +69,7 @@ with tabImages:
         st.warning("Too many rows to show images. Please filter down to 200 or fewer.")
     else:
         st.write(f"Showing plots for filtered data count: {len(filtered)}")
+        radio_opt = st.radio("Image type", options=["both", "contour", "heatmap"], index=0, horizontal=True)
         pdb = ""
         count = 0
         for idx, row in filtered.iterrows():
@@ -81,11 +82,18 @@ with tabImages:
             with cols[count % 4]:
                 count += 1
                 st.write(row["pdb_code"], row["chain"], row["rid"], row["aa"], row["dssp"], f"resolution: {row['resolution']}")
-                image_path = Path(f"data/images/peptide_bonds/{row['image_name']}")
-                if image_path.exists():
-                    st.image(str(image_path), width=200)
-                else:
-                    st.warning(f"Image not found: {image_path}")
+                image_path1 = Path(f"data/images/peptide_bonds/{row['image_name']}contour.png")
+                image_path2 = Path(f"data/images/peptide_bonds/{row['image_name']}heatmap.png")
+                if radio_opt in ["both", "contour"]:
+                    if image_path1.exists():
+                        st.image(str(image_path1), width=200)
+                    else:
+                        st.warning(f"Image not found: {image_path1}")
+                if radio_opt in ["both", "heatmap"]:
+                    if image_path2.exists():
+                        st.image(str(image_path2), width=200)
+                    else:
+                        st.warning(f"Image not found: {image_path2}")
 with tabGroup:
     cols = st.columns(3)
     with cols[0]:

@@ -208,4 +208,4 @@ __marimo__/
 .vscode/*
 
 data/images/peptide_bonds/*.png
-
+data/images/hydrogen_bonds/*.png

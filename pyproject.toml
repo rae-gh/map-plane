@@ -22,10 +22,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "ruff", "pydssp"]
+test = ["pytest", "ruff"]
 dev = ["pytest", "ruff", "ipykernel", "jupyter", "pre-commit"]
 ml = ["torch", "torchvision", "rcsb-api", "Pillow", "scikit-learn", "streamlit", "timm==0.9.16", "huggingface_hub"]
-analysis = ["scikit-learn", "umap-learn", "hdbscan", "biopython==1.81", "pydssp", "rcsb-api"]
+analysis = ["scikit-learn", "umap-learn", "hdbscan", "biopython==1.81", "rcsb-api"]
 app = ["streamlit"]
 
 [tool.hatchling.build.targets.wheel]

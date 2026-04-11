@@ -13,22 +13,18 @@ import pandas as pd
 import uuid
 import os
 
-from config import GEOM_PARAMS
-from config import ADD_PARAMS
-
-
 
 ####### CONFIGURATION ####################
-width = 6
-samples = 100
+width = 15
+samples = 200
 interpolation = "bspline"
 classify_mode = False
 count_max = 1000000  # Set a maximum number of iterations
-skip_mode = True
+skip_mode = False
 #############################################
 RESULTS_DIR = "results"
 DATA_DIR = "data"
-IMAGE_DIR = Path(f"{DATA_DIR}/images/peptide_bonds")
+IMAGE_DIR = Path(f"{DATA_DIR}/images/hydrogen_bonds")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
@@ -51,19 +47,17 @@ mman.MapsManager().set_dir(MPDATA_DIR)
 print("Data directory set to: ", MPDATA_DIR)
 
 # geom_params
-ls_geos = []
-for gp in GEOM_PARAMS:
-    ls_geos.append(gp)
+ls_geos = ["NZ[aa|20]:(O)[dis|2.1><2.9,rid|>1,aa|20]"]
+ls_extra = ["dssp"]
 
-ls_extra = []
-for ap in ADD_PARAMS:
-    ls_extra.append(ap)
-
-out_tsv = f"{DATA_DIR}/peptide_bonds_data.tsv"
+out_tsv = f"{DATA_DIR}/hydrogen_bonds_data.tsv"
 with open(out_tsv, "w") as out_f:
     out_f.write("pdb_code\tresolution\trid\tchain\taa\timage_name\tsoftware\trefinement\tr_work\tr_free\tstereo_target\tis_multipole")
-    for gp in ls_extra + ls_geos:
+    for gp in ls_extra:
         out_f.write(f"\t{gp}")
+    for gp in ls_geos:
+        out_f.write(f"\t{gp}")
+        out_f.write(f"\tinfo_{gp}")
     out_f.write("\n")
     out_f.flush()
 
@@ -81,55 +75,41 @@ for row in pbd_query_df.itertuples():
     stereo_target = row.stereo_target
     is_multipole = row.is_multipole
 
-    print(f"{count}/{len(pdb_codes)}------ {pdb_code} {resolution} ------###############################################")
+    print(f"{count}/{len(pdb_codes)}------ {pdb_code} {resolution} ------")
     ml = mman.MapsManager().get_or_create(pdb_code,file=1,header=1,values=1)
     mf = mfun.MapFunctions(pdb_code,ml.mobj,ml.pobj,interpolation)
     pobj = mf.pobj
 
     geomm = geom_maker([pobj])
+    df_hb1 = geomm.calculateGeometry(ls_geos)
 
-    core_list = []
-    prev_list = []
-    next_list = []
-    both_list = []
-    for col in ls_geos:
-        if "-" not in col and "+" not in col:
-            core_list.append(col)
-        elif "-" in col and "+" not in col:
-            prev_list.append(col)
-        elif "+" in col and "-" not in col:
-            next_list.append(col)
-        else:
-            both_list.append(col)
-    df_core = geomm.calculateGeometry(core_list)
-    df_prev = geomm.calculateGeometry(prev_list)
-    df_next = geomm.calculateGeometry(next_list)
-    df_both = geomm.calculateGeometry(both_list)
+    if len(df_hb1) == 0:
+        #print(f"No hydrogen bonds found for {pdb_code}, skipping...")
+        continue
+    print(f"Found {len(df_hb1)} hydrogen bonds for {pdb_code}.")
+    #print(df_hb1.head(3).T)
 
-    #df_geos.to_csv(f"{DATA_DIR}/geometry_{pdb_code}.tsv", sep="\t", index=False)
-    # this returns a dataframe with columns for each geometry and also columns for
-    # residue level: aa, dssp
-    # averaged atom level: bfactor, occupancy
-    # we will choose 2 occupancy measures:
-    # The tau angle for the bfactor and occupancy average for the backbone atoms only N:CA:C
-    # The C:O bond length for an indication of O quality
-
-   #print(df_geos.head(10))
-
-    a1,a2,a3 = pobj.get_first_three()
-    #print(f"First three keys: {a1}, {a2}, {a3}")
-    key1=pobj.get_key(a1)
-    key2=pobj.get_key(a2)
-    key3=pobj.get_key(a3)
-
-    while key1 != "" and key2 != "" and key3 != "":
+    for idx, hb_row in df_hb1.iterrows():
+        geo = ls_geos[0]
+        chn = hb_row['chain']
+        rid = hb_row['rid']
+        aa = hb_row['aa']
+        dis = hb_row[geo]
+        info = hb_row[f"info_{geo}"]
+        print(f"Processing {pdb_code} chain {chn} rid {rid} aa {aa} with distance {dis} and info {info}")
+        #atm_key = f"{atm['chain']}:{ridn}@{atm['atm']}.{atm['version']}"
+        #(A|LYS|36|NZ|488)(A|GLN|221|O|3101)
+        info_split=info.split(")")
+        info1=info_split[0].replace("(","").split("|")
+        info2=info_split[1].replace("(","").split("|")
+        key1=f"{info1[0]}:{info1[2]}@{info1[3]}.A"
+        key2=f"{info2[0]}:{info2[2]}@{info2[3]}.A"
+        key3=f"{info1[0]}:{info1[2]}@O.A"
         print(f"Keys: {key1}, {key2}, {key3}")
-        chn = a1["chain"]
-        rid = int(a1["rid"])
-        aa = a1["aa"]
-        image_name = f"{pdb_code}_{chn}_{rid}_{aa}_"
-        image_name1 = f"{pdb_code}_{chn}_{rid}_{aa}_heatmap.png"
-        image_name2 = f"{pdb_code}_{chn}_{rid}_{aa}_contour.png"
+
+        image_name = f"{pdb_code}_{info1[1]}_{info2[1]}_{key1}_{key2}_".replace(":", "_").replace("@", "_").replace(".", "_")
+        image_name1 = f"{image_name}heatmap.png"
+        image_name2 = f"{image_name}contour.png"
         # check if image already exists
         exists_image = Path(f"{IMAGE_DIR}/{image_name1}").exists() and Path(f"{IMAGE_DIR}/{image_name2}").exists()
         if skip_mode and exists_image:
@@ -142,13 +122,14 @@ for row in pbd_query_df.itertuples():
                 image_name2 = f"{uuid.uuid4().hex}_contour.png"
             print(f"Image name: {image_name1} and {image_name2}")
 
-            cc = v3.VectorThree().from_coords(pobj.get_coords_key(key2))
-            ll = v3.VectorThree().from_coords(pobj.get_coords_key(key1))
+            cc = v3.VectorThree().from_coords(pobj.get_coords_key(key1))
+            ll = v3.VectorThree().from_coords(pobj.get_coords_key(key2))
             pp = v3.VectorThree().from_coords(pobj.get_coords_key(key3))
 
             vals2d = mf.get_slice(cc,ll,pp,width,samples,interpolation,deriv=0,ret_type="2d")
             mplot1 = mph.MapPlotHelp(f"{IMAGE_DIR}/{image_name1}")
             mplot1.make_plot_slice_2d(vals2d,
+                                        points = [cc,ll,pp],
                                         min_percent=5,
                                         max_percent=95,
                                         samples=samples,
@@ -159,8 +140,9 @@ for row in pbd_query_df.itertuples():
                                         plotwidth=1000)
             mplot2 = mph.MapPlotHelp(f"{IMAGE_DIR}/{image_name2}")
             mplot2.make_plot_slice_2d(vals2d,
-                                        min_percent=5,
-                                        max_percent=95,
+                                        points = [cc,ll,pp],
+                                        min_percent=3,
+                                        max_percent=97,
                                         samples=samples,
                                         width=width,
                                         title="",
@@ -170,32 +152,23 @@ for row in pbd_query_df.itertuples():
 
         ##########################################
         with open(out_tsv, "a") as out_f:
-            out_f.write(f"{pdb_code}\t{resolution}\t{rid}\t{a1['chain']}\t{aa}\t{image_name}\t{software}\t{refinement}\t{r_work}\t{r_free}\t{stereo_target}\t{is_multipole}")
-            for geocol in ls_extra + ls_geos:
+            out_f.write(f"{pdb_code}\t{resolution}\t{rid}\t{chn}\t{aa}\t{image_name}\t{software}\t{refinement}\t{r_work}\t{r_free}\t{stereo_target}\t{is_multipole}")
+            for geocol in ls_extra:
                 # match on chain and rid to get the geo value for this residue
-                use_df = None
-                if geocol in df_core.columns:
-                    use_df = df_core
-                elif geocol in df_prev.columns:
-                    use_df = df_prev
-                elif geocol in df_next.columns:
-                    use_df = df_next
-                elif geocol in df_both.columns:
-                    use_df = df_both
-
-                if use_df is not None:
-                    chain_df = use_df[use_df['chain'] == chn]
-                    rid_df = chain_df[chain_df['rid'] == rid]
-                    geoval = rid_df[geocol].values[0] if not rid_df.empty else None
-                    out_f.write(f"\t{str(geoval)}")
-                else:
-                    out_f.write("\t")
+                chain_df = df_hb1[df_hb1['chain'] == chn]
+                rid_df = chain_df[chain_df['rid'] == rid]
+                geoval = rid_df[geocol].values[0] if not rid_df.empty else None
+                out_f.write(f"\t{str(geoval)}")
+            for geocol in ls_geos:
+                # match on chain and rid to get the geo value for this residue
+                chain_df = df_hb1[df_hb1['chain'] == chn]
+                rid_df = chain_df[chain_df['rid'] == rid]
+                geoval = rid_df[geocol].values[0] if not rid_df.empty else None
+                geoinfo = rid_df[f"info_{geocol}"].values[0] if not rid_df.empty else None
+                out_f.write(f"\t{str(geoval)}")
+                out_f.write(f"\t{str(geoinfo)}")
             out_f.write("\n")
             out_f.flush()
-        ##########################################
-        key1, a1 =pobj.get_next_key(key1)
-        key2, a2 =pobj.get_next_key(key2)
-        key3, a3 =pobj.get_next_key(key3)
 
 
 

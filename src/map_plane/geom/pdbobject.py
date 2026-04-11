@@ -3,7 +3,6 @@ RSA 4/2/23
 https://pynative.com/make-python-class-json-serializable/#:~:text=Use%20toJSON()%20Method%20to%20make%20class%20JSON%20serializable&text=So%20we%20don't%20need,Python%20Object%20to%20JSON%20string.
 
 """
-
 from map_plane.vxyz import vectorthree as v3
 from map_plane import MPDATA_DIR
 import pandas as pd
@@ -252,27 +251,27 @@ class PdbObject(object):
     #     return pd.DataFrame.from_dict(dicdssp)
 
     def dsspDataFrame(self):
-        import pydssp
-        import numpy as np
+        from Bio.PDB import PDBParser
+        from Bio.PDB.DSSP import DSSP
+        import warnings as _warnings
 
         try:
-            with open(self.pdb_path, 'r') as f:
-                pdb_text = f.read()
-
-            # pydssp handles multi-chain PDB files
-            coords, seq = pydssp.read_pdbtext(pdb_text)
-            ss_array = pydssp.assign(coords, out="c8")
-
+            parser = PDBParser(QUIET=True)
+            structure = parser.get_structure('protein', self.pdb_path)
+            model = structure[0]
+            with _warnings.catch_warnings():
+                _warnings.simplefilter("ignore")
+                dssp = DSSP(model, self.pdb_path, dssp='mkdssp')
             # Build dataframe matching your existing format
             # seq is list of (chain, resnum, resname) tuples
             dicdssp = []
-            for (chain, rid, aa), ss in zip(seq, ss_array):
-                dic = {
-                    'pdbCode': self.pdb_code,
-                    'chain': chain,
-                    'rid': rid,
-                    'dssp': ss
-                }
+            chn=""
+            res=""
+            for chain in dssp.keys():
+                chn = chain[0]
+                res = chain[1][1]
+                dsp = dssp[chain][2]
+                dic = {'pdbCode':self.pdb_code,'chain':chn,'rid':res,'dssp':dsp}
                 dicdssp.append(dic)
 
             return pd.DataFrame.from_dict(dicdssp)

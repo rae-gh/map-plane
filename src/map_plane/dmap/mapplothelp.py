@@ -150,11 +150,13 @@ class MapPlotHelp(object):
 
         # Flatten to 1D and find percentile
         absmin,absmax,d0,d1,d2 = self.__get_levels__(vals,min_percent,max_percent)
-        print("absmin:", absmin)
-        print("absmax:", absmax)
-        print("d0:", d0)
-        print("d1:", d1)
-        print("d2:", d2)
+        contours = abs((absmax-absmin)/levels)
+        #print("absmin:", absmin)
+        #print("absmax:", absmax)
+        #print("d0:", d0)
+        #print("d1:", d1)
+        #print("d2:", d2)
+        #print(f"Contours: {contours}")
 
         colorscale=self.__get_colors__(hue,d0,d1,d2,transparency=transparency,)
 
@@ -162,7 +164,7 @@ class MapPlotHelp(object):
             if plot_type == "contour":
                 data_vals = go.Contour(z=vals,showscale=False,
                                 colorscale=colorscale,
-                                contours=dict(start=absmin,end=absmax,size=(absmax-absmin)/levels),
+                                contours=dict(start=absmin,end=absmax,size=contours),
                                 text=naybs,
                                 hovertemplate='......%{z:.4f}<br>%{text}',
                                 line=dict(width=0.2,color="gray"),
@@ -175,13 +177,15 @@ class MapPlotHelp(object):
                                 zmin=absmin,zmax=absmax,name='')
         else:
             if plot_type == "contour":
+                #print("Plotting contour with absmin:", absmin, "absmax:", absmax, "contours:", contours)
                 data_vals = go.Contour(z=vals,showscale=False,
                                 colorscale=colorscale,
-                                contours=dict(start=absmin,end=absmax,size=(absmax-absmin)/levels),
+                                contours=dict(start=absmin,end=absmax,size=contours),
                                 hovertemplate='......%{z:.4f}',
                                 line=dict(width=0.2,color="gray"),
                                 zmin=absmin,zmax=absmax,name='')
             elif plot_type == "heatmap":
+                #print("Plotting heatmap with absmin:", absmin, "absmax:", absmax)
                 data_vals = go.Heatmap(z=vals,showscale=False,
                                 colorscale=colorscale,
                                 hovertemplate='......%{z:.4f}',
@@ -269,18 +273,33 @@ class MapPlotHelp(object):
 
     def __get_levels__(self,values,min_percent=0, max_percent=100):
 
-        absmin = np.percentile(values, min_percent)    # 5th percentile   else:
-        absmax = np.percentile(values, max_percent)  # 95th percentile
+        per_min = np.percentile(values, min_percent)    # 5th percentile   else:
+        per_max = np.percentile(values, max_percent)  # 95th percentile
 
-        if absmin == absmax:
-            d0 = 0.5
-        elif absmin > 0:
-            d0 = 0
+        actual_min = float(np.min(values))
+        actual_max = float(np.max(values))
+
+        #print(f"Actual min: {actual_min}, Actual max: {actual_max}")
+        #print(f"Requested percentiles: {min_percent}th percentile = {per_min}, {max_percent}th percentile = {per_max}")
+
+        if per_max <= per_min:
+            d0, d1, d2 = 0,0.5, 1
+            print(f"Warning: per_max is less than or equal to per_min, check the min_percent and max_percent values, {per_min} and {per_max}")
+        elif actual_max <= actual_min:
+            d0, d1, d2 = 0,0.5, 1
+            print(f"Warning: actual_max is less than or equal to actual_min, check the data values, {actual_min} and {actual_max}")
         else:
-            d0 = (0 - absmin) / (absmax - absmin)
-        d1 = d0 + ((1-d0)/3)
-        d2 = d0 + (2*(1-d0)/3)
-        return float(absmin),float(absmax),float(d0),float(d1),float(d2)
+            # scale the percentiles to 0-1 for the colorscale
+            def scaled(x, min_val, max_val):
+                x = x - min_val
+                x = x / (max_val - min_val)
+                return x
+            d0 = scaled(per_min, actual_min, actual_max)
+            d1 = scaled((per_min + per_max)/2, actual_min, actual_max)
+            d2 = scaled(per_max, actual_min, actual_max)
+
+        return per_min,per_max,d0,d1,d2
+        #return float(absmin),float(absmax),float(d0),float(d1),float(d2)
 
     def __get_colors__(self,hue,d0,d1,d2,transparency):
         if d0 < 0 or d0 > 1 or d1 < 0 or d1 > 1 or d2 < 0 or d2 > 1:

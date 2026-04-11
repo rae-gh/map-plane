@@ -1,5 +1,14 @@
+11/04/2026
+[ ] - Need to redo the publication plot to be with current code and also have a contour version
+[ ] - consider hydrogen bonds in piblication
+[x] - Add contour plots to look at the different character of the peptide plane
+[x] - Add an entirely new search on hydrogen bonds that match the 4ua6 claim: 
+  - Ser70 OG-Lys73 NZ, 2.53Å, LBHB –active site
+  - Asp233 OD2-Asp246 OD1, 2.47Å, LBHB –buried residue
+
+
 07/04/2026
-[ ] - Bug, the fig01 test works locally but fails in pytest due to the request for negative values in the colouir scale.
+[ ] - Bug, the fig01 test works locally but fails in pytest due to the request for negative values in the colour scale.
 
 03/04/2026
 [x] - Add options to umap
