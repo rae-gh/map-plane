@@ -9,9 +9,10 @@ python -m streamlit run streamlit/app_peptide.py
 
 ## Dev
 
-conda env is called phd and created with python 3,14
+conda env is called phd and created with python 3.14
 ```
-conda activate phd
+conda create -n map-plane-env -c conda-forge python=3.14
+conda activate map-plane-env
 conda install -c conda-forge dssp
 
 # Dev - all of it

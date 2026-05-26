@@ -224,6 +224,14 @@ class MapLoader(object):
             print("Error loading map", str(e))
             return False
 
+    def load_map_from_path(self, path, diff=False):        
+       if diff:
+           self._filepath_diff = path            
+       else:
+           self._filepath_ccp4 = path
+       self.load_map()
+       self.load_values(diff=diff)
+
     def wait_for_load(self,log_level=0):
         import time
         count = 0

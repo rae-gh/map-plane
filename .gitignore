@@ -209,3 +209,4 @@ __marimo__/
 
 data/images/peptide_bonds/*.png
 data/images/hydrogen_bonds/*.png
+tests/tmp/*.png

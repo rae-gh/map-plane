@@ -6,10 +6,17 @@ from map_plane.vxyz import vectorthree as v3
 from map_plane import MPDATA_DIR
 import map_plane
 print("map-plane version:", map_plane.version())
+
+import matplotlib
+matplotlib.use('Agg')  # Must be before importing pyplot
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+
 import io
 from PIL import Image
+
+
+
 
 
 
