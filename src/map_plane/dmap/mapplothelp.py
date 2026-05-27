@@ -223,8 +223,8 @@ class MapPlotHelp(object):
             # Remove colour bar
             coloraxis_showscale=False,
             # Make the figure exactly the heatmap with no padding
-            width=samples,
-            height=samples,
+            width=plotwidth,
+            height=plotwidth,
         )
 
 
