@@ -14,6 +14,7 @@ conda env is called phd and created with python 3.14
 conda create -n map-plane-env -c conda-forge python=3.14
 conda activate map-plane-env
 conda install -c conda-forge dssp
+python -m pip install gemmi
 
 # Dev - all of it
 python -m pip install -e ".[test,dev,ml,analysis,app]"

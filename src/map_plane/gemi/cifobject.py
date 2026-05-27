@@ -1,0 +1,499 @@
+"""
+RSA 4/2/23
+https://pynative.com/make-python-class-json-serializable/#:~:text=Use%20toJSON()%20Method%20to%20make%20class%20JSON%20serializable&text=So%20we%20don't%20need,Python%20Object%20to%20JSON%20string.
+
+"""
+from map_plane.vxyz import vectorthree as v3
+from map_plane import MPDATA_DIR
+import pandas as pd
+import json
+import gemmi
+
+amino_acids = ["ala","arg","asn","asp","cys","gln","glu","gly","his","ile","leu","lys","met","phe","pro","ser","thr","trp","tyr","val"]
+class CifObject(object):
+    def __init__(self, pdb_code, pdb_path=""):
+        # PUBLIC INTERFACE
+        self.pdb_code = pdb_code
+        self.resolution = -1
+        self.exp_method = ""
+        self.chains = {}
+        self.exc_hetatm = False
+        self.lines = []
+        if pdb_path == "":
+            self.pdb_path = f"{MPDATA_DIR}/{pdb_code}.pdb"
+        else:
+            self.pdb_path = pdb_path
+
+    def __str__(self):
+        return f"{self.pdb_code}\t{self.resolution}\t{self.exp_method}"
+
+    def lines(self,atoms=False):
+        lines = []
+        for chain,resdic in self.chains.items():
+            for no,res in resdic.items():
+                lines.append(chain + "\t" + str(res))
+                for attype,atm in res.atoms.items():
+                    if atoms:
+                        lines.append(atm)
+        return lines
+
+    def add_atoms(self,bio_struc):
+        self.bio_struc = bio_struc
+        self.resolution = bio_struc.resolution
+        self.exp_method = bio_struc.info['_exptl.method']
+        atomNo = 0
+        ridx = 0
+        last_bad = ""
+        for model in self.bio_struc:
+            for chain in model:
+                self.chains[chain.name] = {} ####  a chain is a dictionary of residue number to GeoResidue ############################################################
+                for residue in chain:
+                    aa = residue.name
+                    rid = residue.seqid.num
+                    resd = PdbResidue(aa, rid, ridx)
+                    chain_name = chain.name
+                    hetatm = residue.entity_type == gemmi.EntityType.NonPolymer
+                    mutation = residue.seqid.icode.strip()                    
+                    # in fact remove any that area lready there
+                    if mutation.strip() != "":
+                        #self.chains[chain][rid] = resd
+                        if chain_name in self.chains:
+                            if rid in self.chains[chain_name]:
+                                self.chains[chain_name].pop(rid)
+                    elif mutation.strip() == "":
+                        this_bad = chain_name + "_" + str(rid)
+                        if this_bad != last_bad:
+                            if rid in self.chains[chain_name] and self.exc_hetatm:
+                                # if it is already there something is wrong so lets remove it
+                                del self.chains[chain_name][rid]
+                            elif len(mutation) > 0 and mutation[0] != " " and self.exc_hetatm:
+                                # if there are mutation insertions they cause us geoemtry problems and we will remove them
+                                last_bad = chain_name + "_" + str(rid)
+                                if rid in self.chains[chain_name]: #we know this has alreadybeen checked, it is just a line of code to stop it adding
+                                    del self.chains[chain_name][rid]
+                            else:
+                                if hetatm and self.exc_hetatm:
+                                    if False:
+                                        print("HETATM",rid)
+                                else:
+                                    # only proceed if we explicitly want hetatms
+                                    ridx = ridx + 1
+
+                                    for atom in residue:                                        
+                                        disordered = 'Y' if atom.altloc != '\0' else 'N'
+                                        if disordered == 'Y' and atom.altloc != 'A':
+                                            continue  # skip non-A alt locs
+                                        if atom.occ is None:
+                                            disordered = 'Y'
+                                        elif atom.occ < 1:
+                                            disordered = 'Y'
+                                        atomNo += 1
+                                        atom_name = atom.name
+                                        occupant = atom.altloc if atom.altloc != '\0' else 'A'                                        
+                                        x = atom.pos.x
+                                        y = atom.pos.y
+                                        z = atom.pos.z
+                                        bfactor = atom.b_iso
+                                        occupancy = atom.occ
+                                        one_atom = PdbAtom(chain_name, resd, atom.element.name, atom_name, atomNo, disordered, occupancy, bfactor, x, y, z)
+                                        self.add_line_string(atomNo, rid, aa, atom_name, chain_name, occupant, x, y, z, occupancy, bfactor, atom_name[0])
+                                        resd.atoms[atom_name] = one_atom
+                                    self.chains[chain_name][rid] = resd
+                                    last_bad = ""
+
+    def elementInList(self,element, atomlist):
+        for atm in atomlist:
+            if element in atm:
+                return True, atm
+        return False, None
+
+    ######## MAP interface #####################
+    def get_first_three(self):
+        atm1, atm2, atm3 = {},{},{}
+        count = 0
+        for atm in self.lines:
+            if atm["atm"] == "CA" and (atm["version"] == "A" or atm["version"] == ""):
+                atm1 = atm
+                count += 1
+            elif atm["atm"] == "C" and (atm["version"] == "A" or atm["version"] == ""):
+                atm2 = atm
+                count += 1
+            elif atm["atm"] == "O" and (atm["version"] == "A" or atm["version"] == ""):
+                atm3 = atm
+                count += 1
+            if count == 3:
+                return atm1,atm2,atm3
+        return atm1,atm2,atm3
+
+    def get_coords_key(self,key):
+        atm = self.get_atm_key(key)
+        if atm == {} or atm == None:
+            return "(0,0,0)"
+        return f"({atm['x']},{atm['y']},{atm['z']})"
+
+    def get_coords(self,atm):
+        if atm == {}:
+            return "(0,0,0)"
+        return f"({atm['x']},{atm['y']},{atm['z']})"
+
+    def get_atm_key(self,key):
+        #A:709@C.A
+        try:
+            sx = key.split("@")
+            s01 = sx[0].split(":")
+            s23 = sx[1].split(".")
+            ch,rid,am,ver = s01[0],s01[1],s23[0],s23[1]            
+            for atm in self.lines:
+                if atm["chain"] == ch:
+                    if int(atm["rid"]) == int(rid):
+                        if atm["atm"] == am:
+                            if atm["version"] == ver:
+                                return atm
+        except Exception as e:
+            print("Error finding key",key,e)
+            return {}
+        return {}
+
+    def get_key(self,atm):
+        if atm == {}:
+            return ""
+        #A:709@C.A
+        return f"{atm['chain']}:{atm['rid']}@{atm['atm']}.{atm['version']}"
+
+    def get_description(self,atm,dis):
+        if atm == {}:
+            return ""
+        #A:709@C.A
+        return f"{round(dis,3)}:{atm['aa']}:{atm['chain']}:{atm['rid']}@{atm['atm']}.{atm['version']}"
+
+    def get_next_key(self,key, offset=1):
+        try:
+            if len(key) < 4:
+                return ""
+            atm = self.get_atm_key(key)
+            ridn = int(atm["rid"]) + offset
+            atm_key = f"{atm['chain']}:{ridn}@{atm['atm']}.{atm['version']}"
+            next_atm = self.get_atm_key(atm_key)
+            if next_atm == {}:
+                return "", {}
+            else:
+                return f"{atm['chain']}:{ridn}@{atm['atm']}.{atm['version']}", next_atm
+        except Exception as e:
+            print("Error finding next key",key,e)
+            return "", {}
+
+    def get_atom_coords(self):
+        atoms = []
+        for atm in self.lines:
+            coord = v3.VectorThree(atm["x"],atm["y"],atm["z"])
+            atoms.append(coord)
+        return atoms
+
+    def get_inscope_atoms(self,anchor,distance,log_level=0):
+        in_scope = []
+        for atm in self.lines:
+            crd = v3.VectorThree(float(atm["x"]),float(atm["y"]),float(atm["z"]))
+            dis = anchor.distance(crd)
+            if dis <= distance:
+                in_scope.append(atm)
+                if log_level > 0:
+                    print("neighbour in scope", self.get_description(atm,dis))
+        return in_scope
+
+    def get_neighbours(self,coord,rnge,atoms=None,ishtml=False):
+        a = ""
+        if atoms == None:
+            atoms = self.lines
+        for atm in atoms:
+            crd = v3.VectorThree(float(atm["x"]),float(atm["y"]),float(atm["z"]))
+            dis = coord.distance(crd)
+            if dis >= rnge[0] and dis <= rnge[1]:
+                desc = self.get_description(atm,dis)
+                if desc not in a:
+                    if ishtml:
+                        a+="<br>......"+ desc
+                    else:
+                        a+="\n......"+desc
+        return a
+    ##################################################################################
+
+    def dataFrame(self):
+        dicdfs = []
+        for chain,resdic in self.chains.items():
+            for no,res in resdic.items():
+                for attype,atm in res.atoms.items():
+                    dic={'pdbCode':self.pdb_code,'resolution':self.resolution,
+                    'chain':atm.chain,'aa':res.amino_acid,'rid':res.rid,'ridx':res.ridx,
+                    'atom':atm.atom_name, 'atomNo':atm.atom_no,'element':atm.atom_type,
+                    'bfactor':atm.bfactor, 'occupancy':atm.occupancy,
+                    'x':atm.x, 'y':atm.y, 'z':atm.z}
+                    dicdfs.append(dic)
+        return pd.DataFrame.from_dict(dicdfs)
+
+    # def dsspDataFrameConda(self):
+    #     from Bio.PDB.DSSP import DSSP
+    #     model = self.bio_struc[0]
+    #     dssp = DSSP(model, self.pdb_path, dssp="mkdssp")  # specify binary name
+    #     print(dssp)
+    #     dicdssp = []
+    #     chn = ""
+    #     res = ""
+    #     for chain in dssp.keys():
+    #         chn = chain[0]
+    #         res = chain[1][1]
+    #         dsp = dssp[chain][2]
+    #         dic = {'pdbCode':self.pdb_code,'chain':chn,'rid':res,'dssp':dsp}
+    #         dicdssp.append(dic)
+    #     return pd.DataFrame.from_dict(dicdssp)
+
+    def dsspDataFrame(self):
+        from Bio.PDB import PDBParser
+        from Bio.PDB.DSSP import DSSP
+        import warnings as _warnings
+
+        try:
+            parser = PDBParser(QUIET=True)
+            structure = parser.get_structure('protein', self.pdb_path)
+            model = structure[0]
+            with _warnings.catch_warnings():
+                _warnings.simplefilter("ignore")
+                dssp = DSSP(model, self.pdb_path, dssp='mkdssp')
+            # Build dataframe matching your existing format
+            # seq is list of (chain, resnum, resname) tuples
+            dicdssp = []
+            chn=""
+            res=""
+            for chain in dssp.keys():
+                chn = chain[0]
+                res = chain[1][1]
+                dsp = dssp[chain][2]
+                dic = {'pdbCode':self.pdb_code,'chain':chn,'rid':res,'dssp':dsp}
+                dicdssp.append(dic)
+
+            return pd.DataFrame.from_dict(dicdssp)
+
+        except Exception as e:
+            print(f"DSSP failed for {self.pdb_code}: {e}")
+            return pd.DataFrame()
+
+
+    # if we add lines from a cif file I will do something different
+    def add_line_string(self,aid, rid, aa, am, ch, ver, x, y, z, occ, bf, ele):
+        #ATOM    435  OE1AGLU A  23      12.418  13.330   0.541  0.58  7.57           O
+        #if "ATOM" in line[:6] or "HETATM" in line[:8]:
+            #aid = line[6:12].strip()
+            #am = line[12:16].strip()
+            #ver = line[16:17].strip()
+            #aa = line[17:21].strip()
+            #ch = line[21:23].strip()
+            #rid = line[23:29].strip()
+            #x = line[29:38].strip()
+            #y = line[38:46].strip()
+            #z = line[46:54].strip()
+            #occ = line[54:60].strip()
+            #bf = line[60:66].strip()
+            #ele = line[66:].strip()
+        atm = {}
+        atm["rid"] = rid
+        atm["aid"] = aid
+        atm["aa"] = aa
+        atm["atm"] = am
+        atm["chain"] = ch
+        if ver == "":
+            ver = "A"
+        atm["version"] = ver
+        atm["x"] = x
+        atm["y"] = y
+        atm["z"] = z
+        atm["occupancy"] = occ
+        atm["bfactor"] = bf
+        atm["element"] = ele
+        self.lines.append(atm)
+        #if "HETATM" in line[:8]:
+        #    print(line)
+        #    print(atm)
+
+    #################################
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
+    def fromJson(self, jsndic):
+        self.pdb_code = jsndic["pdb_code"]
+        self.lines = jsndic["lines"]
+
+
+
+###################################################################################################################
+class PdbResidue:
+    """Class for a single residue
+
+    :data amino acid:
+    :data atoms:
+    """
+
+    def __init__(self, amino_acid,rid,ridx):
+        """Initialises a GeoPdb with a biopython structure
+
+        :param biopython_structure: A list of structures that has been created from biopython
+        """
+
+        self.atoms = {}
+        self.elements = {}
+        self.amino_acid = amino_acid
+        self.rid = rid
+        self.ridx = ridx
+
+    def __str__(self):
+       delim = "\t"
+       return f"{self.amino_acid}{delim}{self.rid}{delim}{self.ridx}"
+
+    def infoResd(self):
+       delim = "|"
+       return f"{self.amino_acid}{delim}{self.rid}"
+
+###################################################################################################################
+class PdbAtom:
+    """Class for a single atom
+
+    :data atom_type:
+    :data atom_name:
+    :data x:
+    :data y:
+    :data z:
+    :data disordered:
+    :data occupancy:
+    :data bfactor:
+    """
+
+    def __init__(self, chain,res,atom_type,atom_name,atom_no,disordered,occupancy,bfactor,x,y,z):
+        """Initialises a pdb with a biopython structure
+
+        :param biopython_structure: A list of structures that has been created from biopython
+        """
+
+        self.info = {}
+        self.chain = chain
+        self.res = res
+        self.atom_type = atom_type
+        self.atom_name = atom_name
+        self.atom_no = atom_no
+        self.disordered = disordered
+        self.occupancy = occupancy
+        self.bfactor = bfactor
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __str__(self):
+        delim = "\t"
+        return f"{self.atom_type}{delim}{self.atom_name}{delim}{self.atom_no}{delim}{self.disordered}{delim}{self.occupancy}{delim}{self.bfactor}{delim}({self.x}{self.y}{self.z})"
+
+    def infoAtom(self):
+        delim = "|"
+        return f"({self.chain}{delim}{self.res.infoResd()}{delim}{self.atom_name}{delim}{self.atom_no})"
+
+    def matchesCriteria(self, criteria,rids=[],dis=-1):
+        if self.disordered == "Y":
+            return False
+        if criteria == "":
+            return True
+        crits = criteria.split(",")
+        for crit in crits:
+            cri = crit.split("|")
+            if cri[0].lower() == "aa":
+                if self.res.amino_acid.upper() == cri[1].upper() or (cri[1].upper()=="20" and self.res.amino_acid.lower() in amino_acids) :
+                    pass
+                else:
+                    return False
+            if cri[0].lower() == "~aa":
+                if self.res.amino_acid.upper() == cri[1].upper():
+                    return False
+                else:
+                    pass
+
+            elif cri[0].lower() == "rid" and len(rids) > 0:
+                if "><" in cri[1]: # this is between the values
+                    crits = cri[1].split('>')
+                    crit_dis1 = float(crits[0])
+                    crit_dis2 = float(crits[1][1:])
+                    for rid in rids:
+                        if abs(int(rid)-int(self.res.rid)) >= int(crit_dis1) and abs(int(rid)-int(self.res.rid)) <= int(crit_dis2):
+                            pass
+                        else:
+                            return False
+                elif "<>" in cri[1]: # these are at the extremes
+                    crits = cri[1].split('<')
+                    crit_dis1 = float(crits[0])
+                    crit_dis2 = float(crits[1][1:])
+                    for rid in rids:
+                        if abs(int(rid)-int(self.res.rid)) <= int(crit_dis1) or abs(int(rid)-int(self.res.rid)) >= int(crit_dis2):
+                            pass
+                        else:
+                            return False
+                elif ">" in cri[1]:
+                    crit_dis = cri[1][1:]
+                    for rid in rids:
+                        if abs(int(rid)-int(self.res.rid)) >= int(crit_dis):
+                            pass
+                        else:
+                            return False
+                elif "<" in cri[1]:
+                    crit_dis = cri[1][1:]
+                    for rid in rids:
+                        if abs(int(rid)-int(self.res.rid)) <= int(crit_dis):
+                            pass
+                        else:
+                            return False
+
+            elif cri[0].lower() == "dis" and dis != -1:
+                if "><" in cri[1]: #betweem
+                    crits = cri[1].split('>')
+                    crit_dis1 = float(crits[0])
+                    crit_dis2 = float(crits[1][1:])
+                    if dis >= crit_dis1 and dis <= crit_dis2:
+                        pass
+                    else:
+                        return False
+                elif "<>" in cri[1]: #extremes
+                    crits = cri[1].split('<')
+                    crit_dis1 = float(crits[0])
+                    crit_dis2 = float(crits[1][1:])
+                    if dis <= crit_dis1 or dis >= crit_dis2:
+                        pass
+                    else:
+                        return False
+                elif "<" in cri[1]:
+                    crit_dis = cri[1][1:]
+                    if float(dis) <= float(crit_dis):
+                        pass
+                    else:
+                        return False
+                elif ">" in cri[1]:
+                    crit_dis = cri[1][1:]
+                    if float(dis) >= float(crit_dis):
+                        pass
+                    else:
+                        return False
+
+            elif cri[0].lower() == "occ":
+                if "=" in cri[1]:
+                    crit_occ = cri[1][1:]
+                    if float(self.occupancy) == float(crit_occ):
+                        pass
+                    else:
+                        return False
+                elif "<" in cri[1]:
+                    crit_occ = cri[1][1:]
+                    if float(self.occupancy) <= float(crit_occ):
+                        pass
+                    else:
+                        return False
+                elif ">" in cri[1]:
+                    crit_occ = cri[1][1:]
+                    if float(self.occupancy) >= float(crit_occ):
+                        pass
+                    else:
+                        return False
+
+        return True
+
