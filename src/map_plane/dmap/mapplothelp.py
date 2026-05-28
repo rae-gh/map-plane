@@ -138,7 +138,10 @@ class MapPlotHelp(object):
                            plotwidth=2079):
         #https://plotly.com/python/3d-isosurface-plots/
         vals = vals2d.tolist()
-        fig = make_subplots(rows=1, cols=1,horizontal_spacing=0.05,vertical_spacing=0.05)
+        fig = make_subplots(
+            rows=1, cols=1,
+            horizontal_spacing=0.05,
+            vertical_spacing=0.05)
 
         mind,maxd = 1000,-1000
         for i in range(len(vals)):
@@ -166,14 +169,14 @@ class MapPlotHelp(object):
                                 colorscale=colorscale,
                                 contours=dict(start=absmin,end=absmax,size=contours),
                                 text=naybs,
-                                hovertemplate='......%{z:.4f}<br>%{text}',
+                                hovertemplate='<br>%{z:.4f}<br>%{text}',
                                 line=dict(width=0.2,color="gray"),
                                 zmin=absmin,zmax=absmax,name='')
             elif plot_type == "heatmap":
                 data_vals = go.Heatmap(z=vals,showscale=False,
                                 colorscale=colorscale,
                                 text=naybs,
-                                hovertemplate='......%{z:.4f}<br>%{text}',
+                                hovertemplate='<br>%{z:.4f}<br>%{text}',
                                 zmin=absmin,zmax=absmax,name='')
         else:
             if plot_type == "contour":
@@ -181,20 +184,20 @@ class MapPlotHelp(object):
                 data_vals = go.Contour(z=vals,showscale=False,
                                 colorscale=colorscale,
                                 contours=dict(start=absmin,end=absmax,size=contours),
-                                hovertemplate='......%{z:.4f}',
+                                hovertemplate='<br>%{z:.4f}<br>%{text}',
                                 line=dict(width=0.2,color="gray"),
                                 zmin=absmin,zmax=absmax,name='')
             elif plot_type == "heatmap":
                 #print("Plotting heatmap with absmin:", absmin, "absmax:", absmax)
                 data_vals = go.Heatmap(z=vals,showscale=False,
                                 colorscale=colorscale,
-                                hovertemplate='......%{z:.4f}',
+                                hovertemplate='<br>%{z:.4f}<br>%{text}',
                                 zmin=absmin,zmax=absmax,name='')
 
 
         fig.add_trace(data_vals,row=1,col=1)
         if len(points) == 3:
-            data_scatter = self.add_points(points,samples,width)
+            data_scatter = self.add_points(points,samples,width, plotwidth)
             fig.add_trace(data_scatter,row=1,col=1)
         fig.update_xaxes(showticklabels=False,visible=False) # hide all the xticks
         fig.update_yaxes(showticklabels=False,visible=False) # hide all the xticks
@@ -240,7 +243,7 @@ class MapPlotHelp(object):
         else:
             fig.write_image(self.filename,width=plotwidth, height=plotwidth)
 
-    def add_points(self, points,samples,width,log_level=0):
+    def add_points(self, points,samples,width,plotwidth):
         # First create the dots for the potitions as a scatter plot
         spc = space.SpaceTransform(points[0], points[1], points[2])
         posC = spc.reverse_transformation(points[0])
@@ -249,10 +252,7 @@ class MapPlotHelp(object):
         posCp = posC.get_point_pos(samples,width)
         posLp = posL.get_point_pos(samples,width)
         posPp = posP.get_point_pos(samples,width)
-        if log_level > 0:
-            print("Central scatter=",posCp.get_key())
-            print("Linear scatter=",posLp.get_key())
-            print("Planar scatter=",posPp.get_key())
+                        
         scatterX = []
         scatterY = []
         # The C value will be zero as it is on the plane - that is because these are the points we made the plane with
