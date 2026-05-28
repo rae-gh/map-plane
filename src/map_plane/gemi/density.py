@@ -4,9 +4,43 @@ import gemmi
 
 
 class Density:
-    def load_density(path):
+    def __init__(self, path):
+        self.path = path
+        self.ed = self.load_density(path)
+    def load_density(self,path):
         ed = gemmi.read_ccp4_map(path)
         return ed
+    def make_roundtrip(self, resolution):
+        # 1. Read a ccp4 file from disk
+        m = gemmi.read_ccp4_map(self.path, setup=False)
+        # 2. Get the grid and the unit cell
+        grid = m.grid    
+        # 3. Map → Structure factors (real-space FFT to reciprocal space)
+        d_min = resolution   # adjust to match your map's resolution
+        sf = gemmi.transform_map_to_f_phi(grid, half_l=True)  # returns RecgridComplexFloat
+        # Convert to a Miller array you can inspect / manipulate
+        mtz_data = sf.prepare_asu_data(dmin=d_min, with_sys_abs=False)    
+        mtz = gemmi.Mtz()
+        mtz.cell = grid.unit_cell
+        mtz.spacegroup = grid.spacegroup
+        mtz.add_dataset("from_map")
+        mtz.add_column("H",   "H")
+        mtz.add_column("K",   "H")
+        mtz.add_column("L",   "H")
+        mtz.add_column("F",   "F")
+        mtz.add_column("PHI", "P")
+        mtz.set_data(mtz_data) 
+        #mtz.write_to_file("../data/mtz/1ejg-calc.mtz")    
+        # 4. Structure factors → Electron density (reciprocal → real space) ─────────    
+        new_grid = mtz.transform_f_phi_to_map("F", "PHI", sample_rate=3.0)
+        # Write the reconstructed density back to CCP4
+        new_ccp4 = gemmi.Ccp4Map()
+        new_ccp4.grid = new_grid
+        new_ccp4.update_ccp4_header()
+        new_ccp4.write_ccp4_map(f"{self.path}_reconstructed.ccp4")
+        return f"{self.path}_reconstructed.ccp4"
+
+
     
 class DensityRspb:
     def __init__(self, pdb_code, data_path):

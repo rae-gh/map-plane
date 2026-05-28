@@ -225,6 +225,7 @@ class MapPlotHelp(object):
             # Make the figure exactly the heatmap with no padding
             width=plotwidth,
             height=plotwidth,
+            yaxis=dict(autorange='reversed')
         )
 
 
