@@ -101,7 +101,7 @@ class DensityRspb:
             ccp_fofc.update_ccp4_header()
             ccp_fofc.write_ccp4_map(self.path_fofc_ccp4)
 
-    def create_ccp4_from_sf(self, sf_path, ccp4_path, resolution):
+    def create_ccp4_from_sf(self, sf_path, ccp4_path):
         doc = gemmi.cif.read(sf_path)
         rblock = gemmi.as_refln_blocks(doc)[0]
         grid = rblock.transform_f_phi_to_map(
@@ -142,13 +142,6 @@ class DensityEbi:
         if not os.path.exists(self.path_fofc_ccp4):
             urllib.request.urlretrieve(self.url_fofc_ccp4, self.path_fofc_ccp4)
 
-class DensityLocal:
-    def __init__(self, pdb_code, ed_path, pdb_path, sf_path, data_path):
-        self.pdb_code = pdb_code
-        self.resolution = None
-        self.path_data = data_path
-        self.path_ed = ed_path
-        self.path_pdb = pdb_path
-        self.path_sf = sf_path
+
 
 
